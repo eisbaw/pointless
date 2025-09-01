@@ -21,16 +21,35 @@ test-unit:
 test-unit-vision:
     cargo test --lib --features vision-grids
 
-# Run integration tests with Xephyr
+# Run integration tests with Xephyr (basic grids only)
 test-integration:
     ./scripts/xephyr_test.sh
+
+# Run integration tests with vision grids
+test-integration-vision:
+    ENABLE_VISION=true ./scripts/xephyr_test.sh
 
 # Run visual validation tests
 test-visual:
     ./scripts/visual_test.sh
 
-# Run all tests
-test: test-unit
+# Run comprehensive integration tests (all grid types, configurations)
+test-integration-full:
+    chmod +x ./scripts/xephyr_test.sh && ./scripts/xephyr_test.sh
+
+# Run X11 compatibility tests
+test-x11:
+    ./scripts/x11_compatibility_test.sh
+
+# Run all tests (unit + basic integration)
+test: test-unit test-integration
+
+# Run comprehensive test suite (environment-aware)
+test-comprehensive:
+    ./scripts/run_tests.sh
+
+# Run all tests including vision grids and X11 compatibility
+test-all: test-unit test-integration-full test-x11 test-visual
 
 # Check code formatting
 fmt:
