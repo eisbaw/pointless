@@ -1,6 +1,5 @@
 use crate::error::{PointlessError, Result};
 use std::ptr;
-use std::sync::atomic::{AtomicBool, Ordering};
 use x11::xlib::{
     Display, GrabModeAsync, XCloseDisplay, XDefaultScreen, XDisplayHeight, XDisplayWidth,
     XErrorEvent, XEvent, XFlush, XGrabKey, XNextEvent, XOpenDisplay, XPending, XRootWindow,
@@ -10,10 +9,13 @@ use x11::xlib::{
 #[cfg(feature = "vision-grids")]
 use x11::xlib::{XAllPlanes, XDestroyImage, XGetImage, ZPixmap};
 
-static X11_ERROR_OCCURRED: AtomicBool = AtomicBool::new(false);
+// Thread-local error tracking for safer X11 error handling
+thread_local! {
+    static X11_ERROR_OCCURRED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
 
 extern "C" fn x11_error_handler(_display: *mut Display, _error: *mut XErrorEvent) -> i32 {
-    X11_ERROR_OCCURRED.store(true, Ordering::Relaxed);
+    X11_ERROR_OCCURRED.with(|cell| cell.set(true));
     0 // Return 0 to continue execution
 }
 
@@ -92,7 +94,7 @@ impl X11Client {
         unsafe {
             // Set up error handler to catch grab failures
             XSetErrorHandler(Some(x11_error_handler));
-            X11_ERROR_OCCURRED.store(false, Ordering::Relaxed);
+            X11_ERROR_OCCURRED.with(|cell| cell.set(false));
 
             XGrabKey(
                 self.display,
@@ -108,7 +110,8 @@ impl X11Client {
             XSync(self.display, 0);
 
             // Check if an error occurred
-            if X11_ERROR_OCCURRED.load(Ordering::Relaxed) {
+            let error_occurred = X11_ERROR_OCCURRED.with(|cell| cell.get());
+            if error_occurred {
                 return Err(PointlessError::KeyGrabFailed { keycode });
             }
 
@@ -168,13 +171,17 @@ impl X11Client {
 
             let image_ref = &*image;
             let data_len = (image_ref.bytes_per_line * image_ref.height) as usize;
-            let mut screenshot_data = Vec::with_capacity(data_len);
-
-            // Copy image data
-            let src_ptr = image_ref.data as *const u8;
-            for i in 0..data_len {
-                screenshot_data.push(*src_ptr.add(i));
+            
+            // Validate data length to prevent buffer overruns
+            if data_len == 0 || data_len > (self.screen_info.width * self.screen_info.height * 4) as usize {
+                XDestroyImage(image);
+                return Err(PointlessError::X11ScreenshotFailed);
             }
+            
+            // Use safe slice operations instead of raw pointer arithmetic
+            let src_ptr = image_ref.data as *const u8;
+            let src_slice = std::slice::from_raw_parts(src_ptr, data_len);
+            let screenshot_data = src_slice.to_vec();
 
             XDestroyImage(image);
             Ok(screenshot_data)

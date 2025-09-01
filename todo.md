@@ -100,10 +100,10 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Replace all unwrap() calls with proper error handling (fail-fast principle)
 - DONE: Fix leaky abstraction: separate grid calculation from cursor positioning in GridManager
 - DONE: Eliminate state duplication: compute grid coordinates on demand instead of caching
-- Fix memory leak potential in screenshot handling unsafe code
-- Implement proper RAII resource management for X11 resources
-- Add structured logging instead of debug prints
-- Fix race condition in global X11_ERROR_OCCURRED static variable
+- DONE: Fix memory leak potential in screenshot handling unsafe code
+- DONE: Implement proper RAII resource management for X11 resources
+- DONE: Add structured logging instead of debug prints (was already completed)
+- DONE: Fix race condition in global X11_ERROR_OCCURRED static variable
 - Create proper integration tests for X11 functionality
 - Break monolithic architecture into composable libraries
 - DONE: Fix inefficient grid recalculation on every keypress

@@ -180,7 +180,14 @@ impl Renderer {
 
 impl Drop for Renderer {
     fn drop(&mut self) {
-        // Note: We can't call X11 functions in Drop without the X11Client
-        // The caller should call destroy_overlay explicitly
+        // Defensive programming: warn if resources weren't properly cleaned up
+        if self.overlay_window.is_some() || self.gc.is_some() {
+            eprintln!(
+                "Warning: Renderer dropped without calling destroy_overlay(). \
+                This may leak X11 resources (window: {:?}, gc: {:?})",
+                self.overlay_window.is_some(), 
+                self.gc.is_some()
+            );
+        }
     }
 }
