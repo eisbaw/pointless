@@ -1,0 +1,21 @@
+[package]
+name = "pointless"
+version = "0.1.0"
+edition = "2021"
+description = "A keyboard-driven X11 cursor utility that makes pointing devices pointless"
+license = "MIT"
+repository = "https://github.com/user/pointless"
+
+[dependencies]
+x11 = "2.21"
+clap = { version = "4.4", features = ["derive"] }
+thiserror = "1.0"
+
+[features]
+default = ["basic-grids"]
+basic-grids = []
+vision-grids = ["opencv"]
+
+[dependencies.opencv]
+version = "0.92"
+optional = true

@@ -2,6 +2,8 @@
 
 *A keyboard-driven X11 cursor utility that makes pointing devices pointless*
 
+IMPORTANT: Obey "AI.rule" comments in existing files.
+
 ## 1. Overview
 
 ### 1.1 Product Vision

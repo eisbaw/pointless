@@ -491,22 +491,14 @@ build-vision:
 # Run unit tests with vision grids
 test-unit-vision:
     cargo test --lib --features vision-grids
-
-# Install to system
-install: build
-    sudo cp target/release/pointless /usr/local/bin/
-
-# Install vision-enabled version
-install-vision: build-vision
-    sudo cp target/release/pointless /usr/local/bin/pointless-vision
 ```
 
 ### 9.2 Deployment Structure
 
 ```
-/usr/local/bin/pointless         # Main executable
-/usr/local/bin/pointless-vision  # Vision-enabled version (optional)
-/usr/share/man/man1/pointless.1  # Manual page
+bin/pointless         # Main executable
+bin/pointless-vision  # Vision-enabled version (optional)
+man/man1/pointless.1  # Manual page
 ```
 
 ## 10. Vision-Based Grids Architecture

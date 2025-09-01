@@ -1,20 +1,24 @@
 # TODO List for Pointless
 
+AI.rule: Keep architecture_design.md updated as tasks are completed.
+AI.rule: Keep readme.md updated as tasks are completed.
+
+
 ## Phase 1: Core Infrastructure
-- Set up Cargo project with shell.nix environment
-- Implement X11 connection and display management
-- Create basic X11 cursor control using XWarpPointer
-- Implement modifier key detection with XGrabKey
-- Create basic overlay window with override_redirect
-- Add command-line argument parsing
+- DONE: Set up Cargo project with shell.nix environment
+- DONE: Implement X11 connection and display management
+- DONE: Create basic X11 cursor control using XWarpPointer
+- DONE: Implement modifier key detection with XGrabKey (Note: Super key conflicts with WM, use Alt)
+- DONE: Create basic overlay window with override_redirect
+- DONE: Add command-line argument parsing
 
 ## Phase 2: Homogeneous Grid
-- Implement uniform grid calculation for screen division
-- Create A-Z coordinate naming system
+- DONE: Implement uniform grid calculation for screen division
+- DONE: Create A-Z coordinate naming system (basic implementation)
 - Add two-key navigation (column + row selection)
 - Implement recursive cell subdivision
-- Add grid rendering with 1-pixel yellow borders
-- Add minimal bitmap font labels
+- DONE: Add grid rendering with 1-pixel yellow borders
+- DONE: Add minimal bitmap font labels
 
 ## Phase 3: QWERTY Grid
 - Map QWERTY key positions to screen coordinates
@@ -38,13 +42,13 @@
 - Implement 0/$ edge positioning and gg/G corners
 
 ## Phase 6: Modularity & Polish
-- Create pluggable GridLayout trait system
-- Refactor all grids to use common interface
-- Add grid type selection via command line
-- Implement visual customization (color, opacity)
-- Add modifier key configuration
+- DONE: Create pluggable GridLayout trait system
+- DONE: Refactor all grids to use common interface
+- DONE: Add grid type selection via command line
+- DONE: Implement visual customization (color, opacity)
+- DONE: Add modifier key configuration
 - Performance optimization for sub-20ms latency
-- Create comprehensive error handling
+- DONE: Create comprehensive error handling
 
 ## Phase 7: Vision-Based Grids (Optional)
 - Add OpenCV as optional Cargo feature
@@ -64,8 +68,8 @@
 - Write usage examples and tutorials
 
 ## Build System
-- Create Justfile with all build commands
-- Add separate builds for basic vs vision features
+- DONE: Create Justfile with all build commands
+- DONE: Add separate builds for basic vs vision features
 - Set up CI/CD pipeline
 - Create installation scripts
 - Package for major Linux distributions
