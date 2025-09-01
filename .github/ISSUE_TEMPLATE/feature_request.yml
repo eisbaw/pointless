@@ -1,0 +1,76 @@
+name: Feature Request
+description: Suggest a new feature for Pointless
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your feature suggestion! Please provide as much detail as possible about your idea.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: "I'm always frustrated when..."
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+      placeholder: "I would like to see..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe any alternative solutions or features you've considered.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - Grid Types
+        - Navigation
+        - Visual/UI
+        - Performance
+        - Configuration
+        - Integration
+        - Accessibility
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low (nice to have)
+        - Medium (would be useful)
+        - High (would significantly improve workflow)
+        - Critical (blocking current usage)
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe how this feature would be used in practice.
+      placeholder: "This would be useful when..."
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I have searched existing issues to avoid duplicates
+          required: true
+        - label: This feature aligns with Pointless' goal of keyboard-driven cursor control
+          required: true
+        - label: I would be interested in helping implement this feature

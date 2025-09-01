@@ -1,0 +1,203 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v0.1.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.create-release.outputs.id }}
+      upload-url: ${{ steps.create-release.outputs.upload_url }}
+      tag-name: ${{ steps.get-tag.outputs.tag }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get tag name
+      id: get-tag
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Simple changelog generation from git log
+        if git tag --list | grep -q "$(git tag --sort=-version:refname | head -n2 | tail -n1)"; then
+          PREV_TAG=$(git tag --sort=-version:refname | head -n2 | tail -n1)
+          CHANGES=$(git log --pretty=format:"* %s" $PREV_TAG..${{ steps.get-tag.outputs.tag }})
+        else
+          CHANGES=$(git log --pretty=format:"* %s" ${{ steps.get-tag.outputs.tag }})
+        fi
+        
+        # Save changelog to file
+        cat > changelog.txt << EOF
+        ## What's Changed
+        
+        $CHANGES
+        
+        **Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git tag --sort=-version:refname | head -n2 | tail -n1)...${{ steps.get-tag.outputs.tag }}
+        EOF
+    
+    - name: Create GitHub Release
+      id: create-release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get-tag.outputs.tag }}
+        release_name: Pointless ${{ steps.get-tag.outputs.tag }}
+        body_path: changelog.txt
+        draft: false
+        prerelease: ${{ contains(steps.get-tag.outputs.tag, 'alpha') || contains(steps.get-tag.outputs.tag, 'beta') || contains(steps.get-tag.outputs.tag, 'rc') }}
+
+  build-release:
+    name: Build Release (${{ matrix.target }})
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-20.04
+            name: linux-x86_64
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-20.04
+            name: linux-x86_64-musl
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libx11-dev \
+          libxext-dev \
+          libxi-dev \
+          pkg-config \
+          musl-tools \
+          musl-dev
+    
+    - name: Install Nix
+      uses: cachix/install-nix-action@v24
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.target }}
+        profile: minimal
+        override: true
+    
+    - name: Configure cargo for musl
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      run: |
+        echo '[target.x86_64-unknown-linux-musl]' >> ~/.cargo/config.toml
+        echo 'linker = "musl-gcc"' >> ~/.cargo/config.toml
+    
+    - name: Build release binary
+      run: |
+        # Use nix-shell for consistent build environment
+        nix-shell --run "cargo build --release --target ${{ matrix.target }}"
+    
+    - name: Prepare release package
+      run: |
+        mkdir -p release-package
+        cp target/${{ matrix.target }}/release/pointless release-package/
+        cp man/man1/pointless.1 release-package/
+        cp scripts/install.sh release-package/
+        cp scripts/quick-install.sh release-package/
+        cp README.md release-package/
+        cp LICENSE release-package/ 2>/dev/null || echo "No LICENSE file found"
+        
+        # Create installation script that works with the package
+        cat > release-package/install-release.sh << 'EOF'
+        #!/bin/bash
+        # Installation script for Pointless release package
+        set -e
+        
+        INSTALL_DIR="${HOME}/.local/bin"
+        MAN_DIR="${HOME}/.local/share/man/man1"
+        
+        echo "Installing Pointless to ${INSTALL_DIR}..."
+        
+        mkdir -p "${INSTALL_DIR}"
+        mkdir -p "${MAN_DIR}"
+        
+        cp pointless "${INSTALL_DIR}/"
+        chmod +x "${INSTALL_DIR}/pointless"
+        cp pointless.1 "${MAN_DIR}/"
+        
+        echo "Pointless installed successfully!"
+        echo "Add ${INSTALL_DIR} to your PATH if not already present."
+        EOF
+        
+        chmod +x release-package/install-release.sh
+    
+    - name: Create release archive
+      run: |
+        cd release-package
+        tar -czf ../pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz *
+        cd ..
+        
+        # Create checksums
+        sha256sum pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz > pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz.sha256
+    
+    - name: Upload release asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload-url }}
+        asset_path: pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz
+        asset_name: pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz
+        asset_content_type: application/gzip
+    
+    - name: Upload checksum
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload-url }}
+        asset_path: pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz.sha256
+        asset_name: pointless-${{ needs.create-release.outputs.tag-name }}-${{ matrix.name }}.tar.gz.sha256
+        asset_content_type: text/plain
+
+  publish-release:
+    name: Publish Release
+    needs: [create-release, build-release]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Publish Release
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: ${{ needs.create-release.outputs.release-id }},
+            draft: false
+          });

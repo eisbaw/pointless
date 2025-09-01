@@ -1,0 +1,104 @@
+name: Bug Report
+description: Report a bug in Pointless
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "Describe what happened..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Run 'pointless --grid-type ...'
+        2. Press Super key
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Pointless Version
+      description: Run `pointless --help` and provide version info if available
+      placeholder: "v0.1.0"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Ubuntu 20.04
+        - Ubuntu 22.04
+        - Ubuntu 24.04
+        - Debian 11
+        - Debian 12
+        - Arch Linux
+        - Fedora
+        - Other Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: display-server
+    attributes:
+      label: Display Server
+      options:
+        - X11
+        - Wayland (with XWayland)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: desktop
+    attributes:
+      label: Desktop Environment
+      options:
+        - GNOME
+        - KDE Plasma
+        - XFCE
+        - i3/Sway
+        - Awesome
+        - dwm
+        - Other
+        - None (headless)
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug Output
+      description: Run pointless with `--debug` flag and paste any relevant output
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I have searched existing issues to avoid duplicates
+          required: true
+        - label: I have tested with the latest version
+        - label: I can reproduce this issue consistently
