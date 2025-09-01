@@ -15,8 +15,8 @@ AI.rule: Keep readme.md updated as tasks are completed.
 ## Phase 2: Homogeneous Grid
 - DONE: Implement uniform grid calculation for screen division
 - DONE: Create A-Z coordinate naming system (basic implementation)
-- Add two-key navigation (column + row selection)
-- Implement recursive cell subdivision
+- DONE: Add two-key navigation (column + row selection)
+- DONE: Implement recursive cell subdivision
 - DONE: Add grid rendering with 1-pixel yellow borders
 - DONE: Add minimal bitmap font labels
 
@@ -47,7 +47,7 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Add grid type selection via command line
 - DONE: Implement visual customization (color, opacity)
 - DONE: Add modifier key configuration
-- Performance optimization for sub-20ms latency
+- DONE: Performance optimization for sub-20ms latency
 - DONE: Create comprehensive error handling
 
 ## Phase 7: Vision-Based Grids (Optional)
@@ -66,6 +66,15 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - Add integration tests for X11 compatibility
 - Create man page documentation
 - Write usage examples and tutorials
+
+## Critical Fixes (MPED Review Issues)
+- DONE: Fix silent X11 key grab failure - add proper error detection
+- DONE: Add proper signal handling for cleanup (SIGINT/SIGTERM)
+- DONE: Refactor grid state management to avoid inconsistencies
+- DONE: Add proper error types (InvalidGridDensity, InvalidOpacity)
+- DONE: Fix infinite loop without cleanup in main event loop
+- DONE: Remove hardcoded magic numbers in grid size calculations
+- DONE: Add proper logging instead of println! statements
 
 ## Build System
 - DONE: Create Justfile with all build commands

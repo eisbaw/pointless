@@ -57,28 +57,29 @@ pub struct Config {
 impl Config {
     pub fn color_rgb(&self) -> crate::error::Result<u32> {
         // Parse hex color string to RGB value - fail fast on invalid input
-        u32::from_str_radix(&self.color, 16)
-            .map_err(|_| crate::error::PointlessError::InvalidColorFormat {
+        u32::from_str_radix(&self.color, 16).map_err(|_| {
+            crate::error::PointlessError::InvalidColorFormat {
                 color: self.color.clone(),
-            })
+            }
+        })
     }
-    
+
     pub fn validate(&self) -> crate::error::Result<()> {
         // Validate all configuration parameters
         self.color_rgb()?; // Ensure color is valid
-        
+
         if self.grid_density == 0 || self.grid_density > 10 {
-            return Err(crate::error::PointlessError::InvalidColorFormat {
-                color: format!("grid_density must be 1-10, got {}", self.grid_density),
+            return Err(crate::error::PointlessError::InvalidGridDensity {
+                density: self.grid_density,
             });
         }
-        
+
         if !(0.0..=1.0).contains(&self.opacity) {
-            return Err(crate::error::PointlessError::InvalidColorFormat {
-                color: format!("opacity must be 0.0-1.0, got {}", self.opacity),
+            return Err(crate::error::PointlessError::InvalidOpacity {
+                opacity: self.opacity,
             });
         }
-        
+
         Ok(())
     }
 }

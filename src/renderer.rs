@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::constants::*;
 use crate::error::{PointlessError, Result};
 use crate::types::GridCell;
 use crate::x11_client::X11Client;
@@ -6,9 +7,8 @@ use std::ffi::CString;
 use std::ptr;
 use x11::xlib::{
     CWBackPixel, CWBorderPixel, CWOverrideRedirect, InputOutput, Window, XClearWindow, XCreateGC,
-    XCreateWindow, XDefaultGC, XDestroyWindow, XDrawRectangle, XDrawString, XFlush, XGCValues,
-    XMapWindow, XSetForeground, XSetWindowAttributes, XSetWindowBackground, XStoreName,
-    XUnmapWindow, GC,
+    XCreateWindow, XDestroyWindow, XDrawRectangle, XDrawString, XFlush, XMapWindow, XSetForeground,
+    XSetWindowAttributes, XStoreName, XUnmapWindow, GC,
 };
 
 pub struct Renderer {
@@ -26,11 +26,7 @@ impl Renderer {
         }
     }
 
-    pub fn create_overlay(
-        &mut self,
-        x11_client: &X11Client,
-        config: &Config,
-    ) -> Result<()> {
+    pub fn create_overlay(&mut self, x11_client: &X11Client, config: &Config) -> Result<()> {
         let screen_info = x11_client.screen_info();
 
         unsafe {
@@ -86,31 +82,31 @@ impl Renderer {
 
     pub fn show_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         if let Some(window) = self.overlay_window {
-            unsafe {
-                XMapWindow(x11_client.display(), window);
-                XFlush(x11_client.display());
+            if !self.is_visible {
+                unsafe {
+                    XMapWindow(x11_client.display(), window);
+                    XFlush(x11_client.display());
+                }
+                self.is_visible = true;
             }
-            self.is_visible = true;
         }
         Ok(())
     }
 
     pub fn hide_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         if let Some(window) = self.overlay_window {
-            unsafe {
-                XUnmapWindow(x11_client.display(), window);
-                XFlush(x11_client.display());
+            if self.is_visible {
+                unsafe {
+                    XUnmapWindow(x11_client.display(), window);
+                    XFlush(x11_client.display());
+                }
+                self.is_visible = false;
             }
-            self.is_visible = false;
         }
         Ok(())
     }
 
-    pub fn draw_grid(
-        &mut self,
-        x11_client: &X11Client,
-        cells: &[GridCell],
-    ) -> Result<()> {
+    pub fn draw_grid(&mut self, x11_client: &X11Client, cells: &[GridCell]) -> Result<()> {
         if let (Some(window), Some(gc)) = (self.overlay_window, self.gc) {
             unsafe {
                 let display = x11_client.display();
@@ -129,9 +125,9 @@ impl Renderer {
                     let label_cstring = CString::new(cell.label.as_str()).unwrap();
                     let center = rect.center();
 
-                    // Position text approximately at center (rough estimation for now)
-                    let text_x = center.x - ((cell.label.len() * 4) as i32 / 2);
-                    let text_y = center.y + 6; // Rough vertical centering
+                    // Position text approximately at center using constants
+                    let text_x = center.x - ((cell.label.len() * CHAR_WIDTH_ESTIMATE) as i32 / 2);
+                    let text_y = center.y + TEXT_VERTICAL_OFFSET;
 
                     XDrawString(
                         display,

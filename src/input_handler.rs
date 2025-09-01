@@ -3,10 +3,9 @@ use crate::error::{PointlessError, Result};
 use crate::types::KeyCode;
 use crate::x11_client::X11Client;
 use std::ffi::CString;
-use x11::keysym;
 use x11::xlib::{
-    ControlMask, KeyPress, KeyPressMask, KeyRelease, KeyReleaseMask, Mod1Mask, Mod4Mask, XEvent,
-    XKeysymToKeycode, XStringToKeysym,
+    ControlMask, KeyPress as KEY_PRESS, KeyPressMask, KeyRelease as KEY_RELEASE, KeyReleaseMask,
+    Mod1Mask, Mod4Mask, XEvent, XKeysymToKeycode, XStringToKeysym,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -85,7 +84,7 @@ impl InputHandler {
     pub fn process_event(&mut self, event: &XEvent) -> InputEvent {
         unsafe {
             match event.type_ {
-                KeyPress => {
+                KEY_PRESS => {
                     let key_event = event.key;
                     let keycode = key_event.keycode as KeyCode;
 
@@ -97,7 +96,7 @@ impl InputHandler {
                         return InputEvent::NavigationKey(keycode);
                     }
                 }
-                KeyRelease => {
+                KEY_RELEASE => {
                     let key_event = event.key;
                     let keycode = key_event.keycode as KeyCode;
 

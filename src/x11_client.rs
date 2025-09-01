@@ -1,12 +1,20 @@
 use crate::error::{PointlessError, Result};
 use std::ptr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use x11::xlib::{
-    Display, GrabModeAsync, KeyPress, KeyPressMask, KeyRelease, KeyReleaseMask,
-    XCloseDisplay, XDefaultScreen, XDisplayHeight, XDisplayWidth, XEvent, XFlush,
-    XGrabKey, XNextEvent, XOpenDisplay, XRootWindow, XSelectInput, XUngrabKey, XWarpPointer,
+    Display, GrabModeAsync, XCloseDisplay, XDefaultScreen, XDisplayHeight, XDisplayWidth,
+    XErrorEvent, XEvent, XFlush, XGrabKey, XNextEvent, XOpenDisplay, XPending, XRootWindow,
+    XSelectInput, XSetErrorHandler, XSync, XUngrabKey, XWarpPointer,
 };
 
-#[derive(Debug)]
+static X11_ERROR_OCCURRED: AtomicBool = AtomicBool::new(false);
+
+extern "C" fn x11_error_handler(_display: *mut Display, _error: *mut XErrorEvent) -> i32 {
+    X11_ERROR_OCCURRED.store(true, Ordering::Relaxed);
+    0 // Return 0 to continue execution
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct ScreenInfo {
     pub width: u32,
     pub height: u32,
@@ -81,8 +89,10 @@ impl X11Client {
 
     pub fn grab_key(&self, keycode: u32, modifiers: u32) -> Result<()> {
         unsafe {
-            // X11 XGrabKey can fail but doesn't return error codes
-            // We need to check via XSync or similar for proper error handling
+            // Set up error handler to catch grab failures
+            XSetErrorHandler(Some(x11_error_handler));
+            X11_ERROR_OCCURRED.store(false, Ordering::Relaxed);
+
             XGrabKey(
                 self.display,
                 keycode as i32,
@@ -93,8 +103,14 @@ impl X11Client {
                 GrabModeAsync,
             );
 
-            // For now return success, but this is a known issue
-            // Real implementation should use XSync and error handler
+            // Force X11 to process the request and trigger any errors
+            XSync(self.display, 0);
+
+            // Check if an error occurred
+            if X11_ERROR_OCCURRED.load(Ordering::Relaxed) {
+                return Err(PointlessError::KeyGrabFailed { keycode });
+            }
+
             Ok(())
         }
     }
@@ -117,6 +133,10 @@ impl X11Client {
             XNextEvent(self.display, &mut event);
             event
         }
+    }
+
+    pub fn has_pending_events(&self) -> bool {
+        unsafe { XPending(self.display) > 0 }
     }
 
     pub fn display(&self) -> *mut Display {
