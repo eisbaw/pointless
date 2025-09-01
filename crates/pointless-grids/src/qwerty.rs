@@ -1,4 +1,4 @@
-use crate::{GridLayout, GridCell, GridCoord, KeyCode};
+use crate::{GridCell, GridCoord, GridLayout, KeyCode};
 use pointless_x11::{Rectangle, ScreenCoord, ScreenInfo};
 use std::collections::HashMap;
 
@@ -242,7 +242,12 @@ impl GridLayout for QwertyGrid {
         cells
     }
 
-    fn process_key(&mut self, key: KeyCode, screen: &ScreenInfo, current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        screen: &ScreenInfo,
+        current_level: u32,
+    ) -> Option<GridCoord> {
         self.process_key_with_screen(key, current_level, screen, 4)
     }
 

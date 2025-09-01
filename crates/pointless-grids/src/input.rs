@@ -60,14 +60,14 @@ pub mod keycodes {
 }
 
 /// Maps X11 keycode to corresponding letter (A-Z).
-/// 
+///
 /// # Arguments
 /// * `keycode` - X11 keycode to convert
-/// 
+///
 /// # Returns
 /// * `Some(char)` - The corresponding uppercase letter if valid
 /// * `None` - If keycode doesn't correspond to a letter
-/// 
+///
 /// # Rationale
 /// Centralized keycode-to-letter mapping eliminates duplication across grid implementations
 /// and provides consistent behavior. Using uppercase letters follows Vim convention.
@@ -107,17 +107,17 @@ pub fn keycode_to_letter(keycode: KeyCode) -> Option<char> {
 }
 
 /// Maps X11 keycode to corresponding number (0-9).
-/// 
+///
 /// # Arguments
 /// * `keycode` - X11 keycode to convert
-/// 
+///
 /// # Returns
 /// * `Some(u32)` - The corresponding number if valid
 /// * `None` - If keycode doesn't correspond to a number
-/// 
+///
 /// # Special Cases
 /// * Key '0' maps to number 0 (not 10), consistent with standard keyboard layout
-/// 
+///
 /// # Rationale
 /// Centralized number mapping with consistent behavior across all grid types.
 /// Using u32 allows for multiplication operations in Vim-style numeric prefixes.
@@ -141,15 +141,15 @@ pub fn keycode_to_number(keycode: KeyCode) -> Option<u32> {
 }
 
 /// Converts letter to column index for grid layouts.
-/// 
+///
 /// # Arguments
 /// * `letter` - Uppercase letter (A-Z)
 /// * `max_columns` - Maximum valid column index
-/// 
+///
 /// # Returns
 /// * `Some(u32)` - Zero-based column index if valid
 /// * `None` - If letter is invalid or exceeds max_columns
-/// 
+///
 /// # Rationale
 /// A=0, B=1, etc. follows standard grid indexing. The max_columns parameter
 /// enables proper bounds checking with fail-fast error reporting.
@@ -158,26 +158,30 @@ pub fn letter_to_column(letter: char, max_columns: u32) -> Option<u32> {
     if col_index < max_columns {
         Some(col_index)
     } else {
-        warn!("Invalid column letter '{}' for grid with {} columns (max: {})", 
-              letter, max_columns, max_columns - 1);
+        warn!(
+            "Invalid column letter '{}' for grid with {} columns (max: {})",
+            letter,
+            max_columns,
+            max_columns - 1
+        );
         None
     }
 }
 
 /// Converts number to row index for grid layouts.
-/// 
+///
 /// # Arguments
 /// * `number` - Number (0-9)
 /// * `max_rows` - Maximum valid row index
-/// 
+///
 /// # Returns
 /// * `Some(u32)` - Zero-based row index if valid
 /// * `None` - If number exceeds max_rows
-/// 
+///
 /// # Special Cases
 /// * Number 0 maps to row 9 (treating 0 as "row 10" in 1-indexed display)
 /// * Numbers 1-9 map to rows 0-8 respectively
-/// 
+///
 /// # Rationale
 /// This mapping allows users to think in 1-indexed terms (A1, A2) while
 /// internally using 0-indexed arrays. The 0->9 mapping follows Vim convention.
@@ -186,8 +190,10 @@ pub fn number_to_row(number: u32, max_rows: u32) -> Option<u32> {
     if row_index < max_rows {
         Some(row_index)
     } else {
-        warn!("Invalid row number {} for grid with {} rows (max display: {})", 
-              number, max_rows, max_rows);
+        warn!(
+            "Invalid row number {} for grid with {} rows (max display: {})",
+            number, max_rows, max_rows
+        );
         None
     }
 }

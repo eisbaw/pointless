@@ -1,5 +1,5 @@
 #[cfg(feature = "vision-grids")]
-use crate::{GridLayout, GridCell, GridCoord, KeyCode};
+use crate::{GridCell, GridCoord, GridLayout, KeyCode};
 #[cfg(feature = "vision-grids")]
 use pointless_x11::{Rectangle, ScreenCoord, ScreenInfo};
 #[cfg(feature = "vision-grids")]
@@ -80,15 +80,22 @@ impl GridLayout for EdgeGrid {
         self.edge_points
             .iter()
             .enumerate()
-            .map(|(i, &pos)| GridCell::new(
-                GridCoord { x: i as u32, y: 0 },
-                Rectangle::new(pos.x - 20, pos.y - 20, 40, 40),
-                format!("{}", i + 1),
-            ))
+            .map(|(i, &pos)| {
+                GridCell::new(
+                    GridCoord { x: i as u32, y: 0 },
+                    Rectangle::new(pos.x - 20, pos.y - 20, 40, 40),
+                    format!("{}", i + 1),
+                )
+            })
             .collect()
     }
 
-    fn process_key(&mut self, key: KeyCode, _screen: &ScreenInfo, _current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        _screen: &ScreenInfo,
+        _current_level: u32,
+    ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
             y: 0,

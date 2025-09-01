@@ -1,4 +1,3 @@
-
 fn main() {
     // Find and link X11 libraries
     if let Err(e) = pkg_config::Config::new()

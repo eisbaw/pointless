@@ -1,4 +1,4 @@
-use crate::{GridLayout, GridCell, GridCoord, KeyCode};
+use crate::{GridCell, GridCoord, GridLayout, KeyCode};
 use pointless_x11::{Rectangle, ScreenCoord, ScreenInfo};
 
 // X11 Keycode mappings
@@ -190,7 +190,12 @@ impl GridLayout for ArrowGrid {
         self.calculate_3x3_cells(center, size)
     }
 
-    fn process_key(&mut self, key: KeyCode, screen: &ScreenInfo, current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        screen: &ScreenInfo,
+        current_level: u32,
+    ) -> Option<GridCoord> {
         self.process_key_with_screen(key, current_level, screen, 4)
     }
 

@@ -3,9 +3,9 @@ pub mod layout;
 pub mod types;
 
 // Basic grid implementations
+pub mod arrow;
 pub mod homogeneous;
 pub mod qwerty;
-pub mod arrow;
 pub mod vim;
 
 // Vision-based grids (optional)
@@ -17,9 +17,9 @@ pub use layout::GridLayout;
 pub use types::{GridCell, GridCoord, KeyCode};
 
 // Grid implementations
+pub use arrow::ArrowGrid;
 pub use homogeneous::HomogeneousGrid;
 pub use qwerty::QwertyGrid;
-pub use arrow::ArrowGrid;
 pub use vim::VimGrid;
 
 #[cfg(feature = "vision-grids")]
