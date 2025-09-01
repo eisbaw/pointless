@@ -1,0 +1,194 @@
+.TH POINTLESS 1 "January 2025" "pointless 0.1.0" "User Commands"
+.SH NAME
+pointless \- A keyboard-driven X11 cursor utility that makes pointing devices pointless
+.SH SYNOPSIS
+.B pointless
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+.B pointless
+is a minimal Linux X11 utility for keyboard-driven cursor positioning using grid overlays. It allows precise cursor control without a mouse by displaying visual grids that can be navigated with keyboard shortcuts.
+
+The utility follows UNIX philosophy: do one thing well, compose with other tools, and provide a simple command-line interface. It supports multiple grid layout algorithms and provides sub-20ms update latency for responsive interaction.
+.SH OPTIONS
+.TP
+.BR \-\-grid\-type " " \fITYPE\fR
+Set the grid type to use. Available types:
+.RS
+.IP "\fBhomogeneous\fR (default)"
+Uniform rectangular grid with A-Z coordinate naming. Two-key selection (column + row) with recursive subdivision.
+.IP \fBqwerty\fR
+QWERTY keyboard layout projected onto screen space. Single key press maps to corresponding screen region.
+.IP \fBarrow\fR
+3x3 directional grid navigated with arrow keys. Supports hierarchical subdivision with Enter/Escape keys.
+.IP \fBvim\fR
+Vim-like navigation with h/j/k/l movement, jump commands (w/b/f{1-9}), and screen positioning (H/M/L, 0/$, gg/G).
+.IP "\fBhough\-lines\fR (vision-grids feature)"
+Detects line intersections in screen content for intelligent jump targets.
+.IP "\fBrectangle\-fitting\fR (vision-grids feature)"
+Identifies rectangular regions in screen content for cursor positioning.
+.IP "\fBedge\-density\fR (vision-grids feature)"
+Analyzes edge density to find regions of visual interest.
+.IP "\fBcolor\-clustering\fR (vision-grids feature)"
+Groups similar colors to identify distinct regions for navigation.
+.IP "\fBfeature\-detection\fR (vision-grids feature)"
+Uses computer vision feature detection (ORB/SIFT) to find interesting points.
+.RE
+.TP
+.BR \-\-modifier\-key " " \fIKEY\fR
+Set the activation modifier key. Options: \fBsuper\fR (default), \fBalt\fR, \fBctrl\fR.
+.TP
+.BR \-\-grid\-density " " \fIN\fR
+Set grid subdivision levels (1-10). Default: 3. Higher values create finer grids.
+.TP
+.BR \-\-color " " \fIHEX\fR
+Set grid color in RGB hex format (without #). Default: FFFF00 (yellow).
+.TP
+.BR \-\-opacity " " \fIF\fR
+Set grid opacity (0.0 to 1.0). Default: 0.8.
+.TP
+.BR \-\-debug
+Enable debug mode for additional logging output.
+.TP
+.BR \-h ", " \-\-help
+Display help information and exit.
+.TP
+.BR \-V ", " \-\-version
+Display version information and exit.
+.SH USAGE
+.SS Basic Operation
+.IP "1." 3
+Hold the modifier key (Super by default) to display the grid overlay.
+.IP "2." 3
+Press navigation keys according to the selected grid type:
+.RS
+.IP "\fBHomogeneous:\fR" 6
+Press column letter (A-Z), then row number (1-9).
+.IP "\fBQWERTY:\fR" 6
+Press any QWERTY key corresponding to desired screen region.
+.IP "\fBArrow:\fR" 6
+Use arrow keys to move in 3x3 grid, Enter to subdivide, Escape to go up.
+.IP "\fBVim:\fR" 6
+Use h/j/k/l for movement, w/b for jump patterns, f{1-9} for numbered jumps.
+.RE
+.IP "3." 3
+Release the modifier key to hide the grid while keeping cursor positioned.
+.SS Grid Types in Detail
+.TP
+.B Homogeneous Grid
+Divides the screen into a uniform rectangular grid. Cells are labeled with coordinates (A1, B2, etc.). Select by pressing the column letter followed by the row number. Selected cells can be recursively subdivided for finer positioning.
+.TP
+.B QWERTY Grid
+Projects the physical QWERTY keyboard layout onto the screen. Press any key (Q, W, E, etc.) to jump to the corresponding screen region. Supports refinement subdivision within selected regions.
+.TP
+.B Arrow Key Grid
+Creates a 3x3 grid centered on the current cursor position. Navigate using arrow keys, press Enter to subdivide the selected cell, and Escape to return to a higher level.
+.TP
+.B Vim Grid
+Provides Vim-style navigation:
+.RS
+.IP "\fBBasic movement:\fR" 4
+h (left), j (down), k (up), l (right)
+.IP "\fBJump patterns:\fR" 4
+w (forward pattern), b (backward pattern)
+.IP "\fBNumbered jumps:\fR" 4
+f{1-9} to jump to numbered targets
+.IP "\fBScreen positioning:\fR" 4
+H (top), M (middle), L (bottom), 0 (left edge), $ (right edge), gg (top-left), G (bottom-right)
+.IP "\fBNumber prefixes:\fR" 4
+Type numbers before movement commands for repetition
+.RE
+.SH EXAMPLES
+.TP
+Start with default homogeneous grid:
+.B pointless
+.TP
+Use QWERTY layout with Alt modifier:
+.B pointless --grid-type qwerty --modifier-key alt
+.TP
+High-density arrow grid with custom color:
+.B pointless --grid-type arrow --grid-density 5 --color FF0000
+.TP
+Vim-style navigation with reduced opacity:
+.B pointless --grid-type vim --opacity 0.5
+.TP
+Vision-based rectangle detection (requires vision-grids feature):
+.B pointless --grid-type rectangle-fitting --debug
+.SH FEATURES
+.SS Core Features
+.IP \(bu 3
+Sub-20ms update latency for responsive interaction
+.IP \(bu 3
+Multiple grid layout algorithms for different use cases
+.IP \(bu 3
+Configurable activation modifier keys
+.IP \(bu 3
+Visual grid overlay with customizable colors and opacity
+.IP \(bu 3
+Recursive subdivision for precise positioning
+.IP \(bu 3
+No configuration files - all settings via command-line
+.SS Vision-Based Grids (Optional)
+When built with the \fBvision-grids\fR feature, pointless can analyze screen content using computer vision algorithms to provide intelligent cursor positioning targets.
+.IP \(bu 3
+Line intersection detection using Hough transforms
+.IP \(bu 3
+Rectangle fitting with morphological operations
+.IP \(bu 3
+Edge density analysis for visual interest regions
+.IP \(bu 3
+Color clustering for distinct region identification
+.IP \(bu 3
+Feature detection using ORB/SIFT algorithms
+.SH FILES
+pointless does not use any configuration files. All configuration is provided via command-line arguments.
+.SH ENVIRONMENT
+.TP
+.B DISPLAY
+X11 display to connect to (standard X11 environment variable).
+.SH EXIT STATUS
+.TP
+.B 0
+Successful termination.
+.TP
+.B 1
+General error (invalid arguments, X11 connection failure, etc.).
+.TP
+.B 2
+Configuration error (invalid grid density, color format, etc.).
+.SH DEPENDENCIES
+.SS Runtime Dependencies
+.IP \(bu 3
+X11 display server
+.IP \(bu 3
+libX11, libXext, libXi (X11 libraries)
+.SS Build Dependencies
+.IP \(bu 3
+Rust toolchain (1.70+)
+.IP \(bu 3
+X11 development headers
+.IP \(bu 3
+pkg-config
+.SS Optional Dependencies (vision-grids feature)
+.IP \(bu 3
+OpenCV 4.x
+.IP \(bu 3
+libclang
+.IP \(bu 3
+LLVM
+.SH BUGS
+Report bugs at: https://github.com/user/pointless/issues
+.SH AUTHOR
+Written using Rust with X11 bindings. Part of the keyboard-driven desktop utility ecosystem.
+.SH SEE ALSO
+.BR xdotool (1),
+.BR xev (1),
+.BR xinput (1),
+.BR wmctrl (1)
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH VERSION
+pointless 0.1.0
+.br
+This manual page was generated for the pointless keyboard-driven cursor utility.
+.br
+For the latest documentation and updates, visit the project repository.

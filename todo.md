@@ -65,8 +65,8 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Implement automated screenshot comparison
 - DONE: Write unit tests for all grid types
 - Add integration tests for X11 compatibility
-- Create man page documentation
-- Write usage examples and tutorials
+- DONE: Create man page documentation  
+- DONE: Write usage examples and tutorials
 
 ## Critical Fixes (MPED Review Issues)
 - DONE: Fix silent X11 key grab failure - add proper error detection
