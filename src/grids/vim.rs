@@ -14,7 +14,6 @@ enum VimMovementMode {
     Normal,
     FindForward,   // After 'w' pressed
     FindBackward,  // After 'b' pressed
-    WaitingNumber, // After 'f' pressed
 }
 
 /// Vim Grid provides Vim-like navigation commands
@@ -79,7 +78,7 @@ impl VimGrid {
                         x: target_x,
                         y: target_y,
                     },
-                    label: char::from_digit(i as u32, 10).unwrap(),
+                    label: char::from_digit(i as u32, 10).unwrap_or('?'),
                 });
             }
         }
@@ -102,7 +101,7 @@ impl VimGrid {
                         x: target_x,
                         y: target_y,
                     },
-                    label: char::from_digit(i as u32, 10).unwrap(),
+                    label: char::from_digit(i as u32, 10).unwrap_or('?'),
                 });
             }
         }

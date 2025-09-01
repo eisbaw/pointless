@@ -6,8 +6,6 @@ use std::collections::HashMap;
 #[cfg(feature = "vision-grids")]
 use crate::constants::*;
 #[cfg(feature = "vision-grids")]
-use crate::error::Result;
-#[cfg(feature = "vision-grids")]
 use crate::grids::GridLayout;
 #[cfg(feature = "vision-grids")]
 use crate::types::{GridCell, GridCoord, KeyCode, Rectangle, ScreenCoord};
@@ -68,49 +66,6 @@ impl HoughGrid {
         self.x11_client = Some(client as *const X11Client);
     }
 
-    fn detect_hough_lines(&mut self, screen: &ScreenInfo) -> Result<Vec<ScreenCoord>> {
-        if self.x11_client.is_none() {
-            // Fall back to stub implementation if no X11 client
-            return Ok(vec![
-                ScreenCoord { x: 200, y: 150 },
-                ScreenCoord { x: 400, y: 300 },
-                ScreenCoord { x: 600, y: 450 },
-                ScreenCoord { x: 800, y: 200 },
-                ScreenCoord { x: 300, y: 500 },
-            ]);
-        }
-
-        // For now, implement a simplified version that creates synthetic line intersections
-        // based on screen geometry rather than actual screenshot analysis
-        // This demonstrates the integration pattern without complex OpenCV data handling
-
-        let width = screen.width as i32;
-        let height = screen.height as i32;
-
-        // Generate synthetic line intersections based on golden ratio grid
-        let golden_ratio = 1.618_f32;
-        let mut intersections = Vec::new();
-
-        // Create a grid based on the golden ratio for aesthetically pleasing target positions
-        for i in 1..=9 {
-            let x_fract = (i as f32 / 9.0) * golden_ratio % 1.0;
-            let y_fract = ((i as f32 * golden_ratio) % 9.0) / 9.0;
-
-            intersections.push(ScreenCoord {
-                x: (x_fract * width as f32) as i32,
-                y: (y_fract * height as f32) as i32,
-            });
-        }
-
-        // TODO: Replace with actual OpenCV Hough line detection once data handling is resolved
-        // The framework is in place for:
-        // 1. Screenshot capture via X11
-        // 2. Mat creation from raw pixel data
-        // 3. Image processing pipeline: grayscale -> blur -> canny -> hough
-        // 4. Line intersection calculations
-
-        Ok(intersections)
-    }
 }
 
 #[cfg(feature = "vision-grids")]
@@ -157,7 +112,7 @@ impl GridLayout for HoughGrid {
     fn reset(&mut self) {
         self.last_refresh = std::time::Instant::now();
         // Refresh jump targets if we have an X11 client
-        if let Some(_) = self.x11_client {
+        if self.x11_client.is_some() {
             // We would refresh here but need screen info
             // This will be handled by the grid manager
         }

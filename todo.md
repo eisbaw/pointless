@@ -86,3 +86,24 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Set up CI/CD pipeline
 - DONE: Create installation scripts
 - DONE: Package for major Linux distributions
+
+## Code Quality Issues (QA Review)
+- DONE: Fix code formatting violations - import order in x11_client.rs
+- DONE: Remove dead code: unused VimMovementMode::WaitingNumber variant
+- DONE: Remove dead code: unused InputHandler fields (modifier_key, modifier_mask)
+- DONE: Remove dead code: unused X11Client field (screen)
+- DONE: Remove unused method: HoughGrid::detect_hough_lines
+- DONE: Fix clippy violation: replace pattern matching with is_some()
+- DONE: Fix unsafe pointer operation: use add() instead of offset()
+
+## Critical MPED Architectural Issues
+- DONE: Replace all unwrap() calls with proper error handling (fail-fast principle)
+- Fix leaky abstraction: separate grid calculation from cursor positioning in GridManager
+- Eliminate state duplication: compute grid coordinates on demand instead of caching
+- Fix memory leak potential in screenshot handling unsafe code
+- Implement proper RAII resource management for X11 resources
+- Add structured logging instead of debug prints
+- Fix race condition in global X11_ERROR_OCCURRED static variable
+- Create proper integration tests for X11 functionality
+- Break monolithic architecture into composable libraries
+- Fix inefficient grid recalculation on every keypress

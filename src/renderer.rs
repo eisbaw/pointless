@@ -70,7 +70,8 @@ impl Renderer {
             }
 
             // Set window name for debugging
-            let window_name = CString::new("Pointless Overlay").unwrap();
+            let window_name = CString::new("Pointless Overlay")
+                .map_err(|_| PointlessError::WindowCreationFailed)?;
             XStoreName(display, overlay_window, window_name.as_ptr());
 
             // Create graphics context
@@ -133,7 +134,8 @@ impl Renderer {
                     XDrawRectangle(display, window, gc, rect.x, rect.y, rect.width, rect.height);
 
                     // Draw cell label at center
-                    let label_cstring = CString::new(cell.label.as_str()).unwrap();
+                    let label_cstring = CString::new(cell.label.as_str())
+                        .map_err(|_| PointlessError::WindowCreationFailed)?;
                     let center = rect.center();
 
                     // Position text approximately at center using constants

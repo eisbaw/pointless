@@ -2,14 +2,13 @@ use crate::error::{PointlessError, Result};
 use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use x11::xlib::{
-    Display, GrabModeAsync, XCloseDisplay, XDefaultScreen,
-    XDisplayHeight, XDisplayWidth, XErrorEvent, XEvent, XFlush, XGrabKey, XNextEvent,
-    XOpenDisplay, XPending, XRootWindow, XSelectInput, XSetErrorHandler, XSync, XUngrabKey,
-    XWarpPointer,
+    Display, GrabModeAsync, XCloseDisplay, XDefaultScreen, XDisplayHeight, XDisplayWidth,
+    XErrorEvent, XEvent, XFlush, XGrabKey, XNextEvent, XOpenDisplay, XPending, XRootWindow,
+    XSelectInput, XSetErrorHandler, XSync, XUngrabKey, XWarpPointer,
 };
 
 #[cfg(feature = "vision-grids")]
-use x11::xlib::{XAllPlanes, XGetImage, XDestroyImage, ZPixmap};
+use x11::xlib::{XAllPlanes, XDestroyImage, XGetImage, ZPixmap};
 
 static X11_ERROR_OCCURRED: AtomicBool = AtomicBool::new(false);
 
@@ -28,7 +27,6 @@ pub struct ScreenInfo {
 #[derive(Debug)]
 pub struct X11Client {
     display: *mut Display,
-    screen: i32,
     root_window: u64,
     screen_info: ScreenInfo,
 }
@@ -56,7 +54,6 @@ impl X11Client {
 
             Ok(X11Client {
                 display,
-                screen,
                 root_window,
                 screen_info,
             })
@@ -176,7 +173,7 @@ impl X11Client {
             // Copy image data
             let src_ptr = image_ref.data as *const u8;
             for i in 0..data_len {
-                screenshot_data.push(*src_ptr.offset(i as isize));
+                screenshot_data.push(*src_ptr.add(i));
             }
 
             XDestroyImage(image);

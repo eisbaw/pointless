@@ -18,20 +18,16 @@ pub enum InputEvent {
 
 #[derive(Debug)]
 pub struct InputHandler {
-    modifier_key: ModifierKey,
     modifier_keycode: KeyCode,
-    modifier_mask: u32,
     is_modifier_pressed: bool,
 }
 
 impl InputHandler {
     pub fn new(modifier_key: ModifierKey, x11_client: &X11Client) -> Result<Self> {
-        let (modifier_keycode, modifier_mask) = Self::get_modifier_info(&modifier_key, x11_client)?;
+        let (modifier_keycode, _) = Self::get_modifier_info(&modifier_key, x11_client)?;
 
         Ok(InputHandler {
-            modifier_key,
             modifier_keycode,
-            modifier_mask,
             is_modifier_pressed: false,
         })
     }
@@ -47,7 +43,10 @@ impl InputHandler {
                 ModifierKey::Ctrl => ("Control_L", ControlMask),
             };
 
-            let keysym_cstring = CString::new(keysym_name).unwrap();
+            let keysym_cstring = CString::new(keysym_name)
+                .map_err(|_| PointlessError::ModifierKeyNotFound {
+                    key_name: format!("invalid key name: {}", keysym_name),
+                })?;
             let keysym = XStringToKeysym(keysym_cstring.as_ptr());
 
             if keysym == 0 {
@@ -119,9 +118,6 @@ impl InputHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::config::ModifierKey;
-
     // Note: These tests require X11 connection and are integration tests
     // They should be run with `cargo test --test integration`
 }
