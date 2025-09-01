@@ -37,13 +37,19 @@ pub trait GridLayout {
     }
 
     /// Get human-readable name for this grid type
+    #[allow(dead_code)]
     fn name(&self) -> &'static str;
 
     /// Reset navigation state
     fn reset(&mut self);
-    
+
     /// Convert grid coordinate to screen coordinate efficiently (without full grid calculation)
-    fn grid_to_screen_coord(&self, coord: GridCoord, screen: &ScreenInfo, density: u32) -> ScreenCoord;
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        density: u32,
+    ) -> ScreenCoord;
 }
 
 #[cfg(test)]

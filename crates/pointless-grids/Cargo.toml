@@ -1,0 +1,23 @@
+[package]
+name = "pointless-grids"
+version = "0.1.0"
+edition = "2021"
+description = "Grid layout algorithms for Pointless cursor positioning"
+license = "MIT"
+
+[lib]
+name = "pointless_grids"
+path = "src/lib.rs"
+
+[dependencies]
+pointless-x11 = { path = "../pointless-x11" }
+log = "0.4"
+
+[features]
+default = ["basic-grids"]
+basic-grids = []
+vision-grids = ["opencv"]
+
+[dependencies.opencv]
+version = "0.92"
+optional = true

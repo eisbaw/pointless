@@ -1,0 +1,25 @@
+[2025-09-01T22:22:35Z DEBUG pointless] Debug mode enabled
+[2025-09-01T22:22:35Z DEBUG pointless] Configuration: Config {
+        grid_type: Homogeneous,
+        modifier_key: Super,
+        grid_density: 3,
+        color: "FFFF00",
+        opacity: 0.8,
+        debug: true,
+    }
+[2025-09-01T22:22:35Z DEBUG pointless] Connected to X11 display
+[2025-09-01T22:22:35Z DEBUG pointless] Screen info: ScreenInfo {
+        width: 800,
+        height: 600,
+        root_window: 560,
+    }
+[2025-09-01T22:22:35Z INFO  pointless] Pointless X11 cursor utility initialized
+[2025-09-01T22:22:35Z INFO  pointless] Screen: 800x600
+[2025-09-01T22:22:35Z INFO  pointless] Grid type: Homogeneous
+[2025-09-01T22:22:35Z INFO  pointless] Modifier key: Super
+[2025-09-01T22:22:35Z DEBUG pointless] Testing cursor control...
+[2025-09-01T22:22:35Z DEBUG pointless] Cursor moved to center: (400, 300)
+[2025-09-01T22:22:36Z DEBUG pointless] Cursor moved to corner: (100, 100)
+[2025-09-01T22:22:36Z DEBUG pointless] Input handler initialized for modifier key: Super
+[2025-09-01T22:22:36Z DEBUG pointless] Renderer and grid manager initialized
+[2025-09-01T22:22:36Z INFO  pointless] Hold Super/Windows key to show grid, press keys 1-4, Q-R, A-F, Z-V to navigate. Ctrl+C to exit.

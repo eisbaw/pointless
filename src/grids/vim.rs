@@ -324,10 +324,15 @@ impl GridLayout for VimGrid {
         self.pending_multiplier = None;
         self.current_cursor = ScreenCoord { x: 0, y: 0 };
     }
-    
-    fn grid_to_screen_coord(&self, coord: GridCoord, screen: &ScreenInfo, density: u32) -> ScreenCoord {
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        density: u32,
+    ) -> ScreenCoord {
         use crate::coordinate_resolver::CoordinateResolver;
-        
+
         // Vim grids already work in screen coordinate space
         CoordinateResolver::grid_to_screen_direct(coord, screen, density)
     }

@@ -23,6 +23,7 @@ extern "C" fn x11_error_handler(_display: *mut Display, _error: *mut XErrorEvent
 pub struct ScreenInfo {
     pub width: u32,
     pub height: u32,
+    #[allow(dead_code)]
     pub root_window: u64,
 }
 
@@ -139,6 +140,7 @@ impl X11Client {
         }
     }
 
+    #[allow(dead_code)]
     pub fn has_pending_events(&self) -> bool {
         unsafe { XPending(self.display) > 0 }
     }
@@ -152,6 +154,7 @@ impl X11Client {
     }
 
     #[cfg(feature = "vision-grids")]
+    #[allow(dead_code)]
     pub fn take_screenshot(&self) -> Result<Vec<u8>> {
         unsafe {
             let image = XGetImage(
@@ -171,13 +174,15 @@ impl X11Client {
 
             let image_ref = &*image;
             let data_len = (image_ref.bytes_per_line * image_ref.height) as usize;
-            
+
             // Validate data length to prevent buffer overruns
-            if data_len == 0 || data_len > (self.screen_info.width * self.screen_info.height * 4) as usize {
+            if data_len == 0
+                || data_len > (self.screen_info.width * self.screen_info.height * 4) as usize
+            {
                 XDestroyImage(image);
                 return Err(PointlessError::X11ScreenshotFailed);
             }
-            
+
             // Use safe slice operations instead of raw pointer arithmetic
             let src_ptr = image_ref.data as *const u8;
             let src_slice = std::slice::from_raw_parts(src_ptr, data_len);

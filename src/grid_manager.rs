@@ -51,7 +51,10 @@ impl GridManager {
                 .process_key_with_screen(key, self.current_level, screen, density)
         {
             // Use efficient coordinate transformation without full grid recalculation
-            return Some(self.current_grid.grid_to_screen_coord(coord, screen, density));
+            return Some(
+                self.current_grid
+                    .grid_to_screen_coord(coord, screen, density),
+            );
         }
         None
     }

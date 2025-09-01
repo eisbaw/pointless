@@ -1,3 +1,14 @@
+[workspace]
+members = [
+    "crates/pointless-x11",
+    "crates/pointless-grids", 
+    "crates/pointless-input",
+    "crates/pointless-render",
+    "crates/pointless-app"
+]
+resolver = "2"
+
+# Main application package for backwards compatibility
 [package]
 name = "pointless"
 version = "0.1.0"
@@ -6,14 +17,11 @@ description = "A keyboard-driven X11 cursor utility that makes pointing devices 
 license = "MIT"
 repository = "https://github.com/user/pointless"
 
-[lib]
-name = "pointless"
-path = "src/lib.rs"
-
 [[bin]]
 name = "pointless"
 path = "src/main.rs"
 
+# Dependencies for the main binary (keep original functionality for compatibility)
 [dependencies]
 x11 = "2.21"
 clap = { version = "4.4", features = ["derive"] }
@@ -21,6 +29,10 @@ thiserror = "1.0"
 signal-hook = "0.3"
 log = "0.4"
 env_logger = "0.11"
+
+[lib]
+name = "pointless"
+path = "src/lib.rs"
 
 [build-dependencies]
 pkg-config = "0.3"
@@ -33,4 +45,3 @@ vision-grids = ["opencv"]
 [dependencies.opencv]
 version = "0.92"
 optional = true
-

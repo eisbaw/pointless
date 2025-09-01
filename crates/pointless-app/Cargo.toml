@@ -1,0 +1,20 @@
+[package]
+name = "pointless-app"
+version = "0.1.0"
+edition = "2021"
+description = "Main application library for Pointless"
+license = "MIT"
+
+[dependencies]
+pointless-x11 = { path = "../pointless-x11" }
+pointless-grids = { path = "../pointless-grids" }
+pointless-input = { path = "../pointless-input" }
+pointless-render = { path = "../pointless-render" }
+thiserror = "1.0"
+log = "0.4"
+signal-hook = "0.3"
+
+[features]
+default = ["basic-grids"]
+basic-grids = ["pointless-grids/basic-grids"]
+vision-grids = ["pointless-grids/vision-grids"]

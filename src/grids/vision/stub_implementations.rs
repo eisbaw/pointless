@@ -62,6 +62,7 @@ impl HoughGrid {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_x11_client(&mut self, client: &X11Client) {
         self.x11_client = Some(client as *const X11Client);
     }
@@ -116,14 +117,22 @@ impl GridLayout for HoughGrid {
             // This will be handled by the grid manager
         }
     }
-    
-    fn grid_to_screen_coord(&self, coord: GridCoord, _screen: &ScreenInfo, _density: u32) -> ScreenCoord {
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
         // Vision grids use their jump targets directly
         if let Some(target) = self.jump_targets.get(coord.x as usize) {
             *target
         } else {
             // Fallback to coordinate position
-            ScreenCoord { x: coord.x as i32 * 100, y: coord.y as i32 * 100 }
+            ScreenCoord {
+                x: coord.x as i32 * 100,
+                y: coord.y as i32 * 100,
+            }
         }
     }
 }
@@ -207,12 +216,20 @@ impl GridLayout for RectangleGrid {
     }
 
     fn reset(&mut self) {}
-    
-    fn grid_to_screen_coord(&self, coord: GridCoord, _screen: &ScreenInfo, _density: u32) -> ScreenCoord {
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
         if let Some(target) = self.rectangles.get(coord.x as usize) {
             *target
         } else {
-            ScreenCoord { x: coord.x as i32 * 100, y: coord.y as i32 * 100 }
+            ScreenCoord {
+                x: coord.x as i32 * 100,
+                y: coord.y as i32 * 100,
+            }
         }
     }
 }
@@ -296,12 +313,20 @@ impl GridLayout for EdgeGrid {
     }
 
     fn reset(&mut self) {}
-    
-    fn grid_to_screen_coord(&self, coord: GridCoord, _screen: &ScreenInfo, _density: u32) -> ScreenCoord {
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
         if let Some(target) = self.edge_points.get(coord.x as usize) {
             *target
         } else {
-            ScreenCoord { x: coord.x as i32 * 100, y: coord.y as i32 * 100 }
+            ScreenCoord {
+                x: coord.x as i32 * 100,
+                y: coord.y as i32 * 100,
+            }
         }
     }
 }
@@ -385,12 +410,20 @@ impl GridLayout for ColorGrid {
     }
 
     fn reset(&mut self) {}
-    
-    fn grid_to_screen_coord(&self, coord: GridCoord, _screen: &ScreenInfo, _density: u32) -> ScreenCoord {
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
         if let Some(target) = self.color_regions.get(coord.x as usize) {
             *target
         } else {
-            ScreenCoord { x: coord.x as i32 * 100, y: coord.y as i32 * 100 }
+            ScreenCoord {
+                x: coord.x as i32 * 100,
+                y: coord.y as i32 * 100,
+            }
         }
     }
 }
@@ -475,12 +508,20 @@ impl GridLayout for FeatureGrid {
     }
 
     fn reset(&mut self) {}
-    
-    fn grid_to_screen_coord(&self, coord: GridCoord, _screen: &ScreenInfo, _density: u32) -> ScreenCoord {
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
         if let Some(target) = self.features.get(coord.x as usize) {
             *target
         } else {
-            ScreenCoord { x: coord.x as i32 * 100, y: coord.y as i32 * 100 }
+            ScreenCoord {
+                x: coord.x as i32 * 100,
+                y: coord.y as i32 * 100,
+            }
         }
     }
 }

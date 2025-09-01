@@ -159,6 +159,7 @@ impl Renderer {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn is_visible(&self) -> bool {
         self.is_visible
     }
@@ -185,7 +186,7 @@ impl Drop for Renderer {
             eprintln!(
                 "Warning: Renderer dropped without calling destroy_overlay(). \
                 This may leak X11 resources (window: {:?}, gc: {:?})",
-                self.overlay_window.is_some(), 
+                self.overlay_window.is_some(),
                 self.gc.is_some()
             );
         }

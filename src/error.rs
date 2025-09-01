@@ -6,6 +6,7 @@ pub enum PointlessError {
     X11ConnectionFailed,
 
     #[error("X11 operation failed: {operation}")]
+    #[allow(dead_code)]
     X11OperationFailed { operation: String },
 
     #[error("Key grab failed for keycode {keycode}")]
@@ -37,10 +38,12 @@ pub enum PointlessError {
 
     #[cfg(feature = "vision-grids")]
     #[error("X11 screenshot capture failed")]
+    #[allow(dead_code)]
     X11ScreenshotFailed,
 
     #[cfg(feature = "vision-grids")]
     #[error("OpenCV processing failed: {message}")]
+    #[allow(dead_code)]
     OpenCVProcessingFailed { message: String },
 }
 

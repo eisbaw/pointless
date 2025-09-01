@@ -1,0 +1,9 @@
+[package]
+name = "pointless-render"
+version = "0.1.0"
+edition = "2021"
+description = "Rendering library for Pointless"
+license = "MIT"
+
+[dependencies]
+pointless-x11 = { path = "../pointless-x11" }

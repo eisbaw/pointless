@@ -111,6 +111,7 @@ impl InputHandler {
         InputEvent::Unknown
     }
 
+    #[allow(dead_code)]
     pub fn is_modifier_pressed(&self) -> bool {
         self.is_modifier_pressed
     }

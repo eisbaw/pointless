@@ -1,0 +1,22 @@
+[package]
+name = "pointless-x11"
+version = "0.1.0"
+edition = "2021"
+description = "X11 client and windowing operations for Pointless"
+license = "MIT"
+
+[lib]
+name = "pointless_x11"
+path = "src/lib.rs"
+
+[dependencies]
+x11 = "2.21"
+thiserror = "1.0"
+log = "0.4"
+
+[build-dependencies]
+pkg-config = "0.3"
+
+[features]
+default = []
+vision-grids = []

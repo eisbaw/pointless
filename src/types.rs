@@ -38,6 +38,7 @@ impl Rectangle {
         }
     }
 
+    #[allow(dead_code)]
     pub fn contains(&self, point: ScreenCoord) -> bool {
         point.x >= self.x
             && point.x < self.x + self.width as i32
@@ -49,6 +50,7 @@ impl Rectangle {
 /// Grid cell definition
 #[derive(Debug, Clone)]
 pub struct GridCell {
+    #[allow(dead_code)]
     pub coord: GridCoord,
     pub screen_rect: Rectangle,
     pub label: String,
@@ -63,6 +65,7 @@ impl GridCell {
         }
     }
 
+    #[allow(dead_code)]
     pub fn center(&self) -> ScreenCoord {
         self.screen_rect.center()
     }

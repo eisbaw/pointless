@@ -61,10 +61,12 @@ pub const MAX_GRID_SIZE: u32 = 6;
 pub const MAX_SUBDIVISION_LEVELS: u32 = 3;
 
 // Performance constants
+#[allow(dead_code)]
 pub const TARGET_UPDATE_LATENCY_MS: u64 = 20;
 pub const MAX_CELLS_PER_GRID: usize = 100;
 
 // Visual constants
+#[allow(dead_code)]
 pub const GRID_BORDER_WIDTH: u32 = 1;
 pub const TEXT_VERTICAL_OFFSET: i32 = 6;
 pub const CHAR_WIDTH_ESTIMATE: usize = 4;
