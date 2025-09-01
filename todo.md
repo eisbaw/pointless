@@ -134,3 +134,11 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: All builds now pass with both basic-grids and vision-grids features
 - DONE: All unit tests pass successfully (20/20)
 - DONE: Added comprehensive input validation with fail-fast error reporting
+
+## Critical Bug Fixes (Sep 2025)
+- DONE: Fixed XAllPlanes compilation error preventing vision-grids feature from building
+- DONE: Fixed vision grid trait method signatures to match GridLayout interface
+- DONE: Resolved all unused import warnings using cargo fix
+- DONE: Cleaned up dead code warnings by marking API methods as intentionally unused
+- DONE: All tests pass (45 total: 20 unit, 4 input, 21 integration)
+- DONE: All clippy warnings resolved, compilation succeeds with all features
