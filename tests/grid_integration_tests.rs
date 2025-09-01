@@ -17,7 +17,6 @@ mod grid_integration_tests {
     fn test_grid_manager_initialization() {
         let _grid_manager = GridManager::new(GridType::Homogeneous);
         // GridManager initialization doesn't fail in current implementation
-        assert!(true, "GridManager should initialize successfully");
     }
 
     #[test]
@@ -31,7 +30,7 @@ mod grid_integration_tests {
 
         for grid_type in grid_types {
             let _grid_manager = GridManager::new(grid_type.clone());
-            assert!(true, "GridManager should initialize for {:?}", grid_type);
+            // GridManager initialized successfully for this grid type
         }
     }
 
@@ -119,7 +118,7 @@ mod grid_integration_tests {
             // Higher density should generally mean more or finer-grained cells
             if density > 1 {
                 assert!(
-                    cells.len() > 0,
+                    !cells.is_empty(),
                     "Grid with density {} should have cells",
                     density
                 );
@@ -151,7 +150,6 @@ mod grid_integration_tests {
             let grid_manager = GridManager::new(GridType::Homogeneous);
             let _cells = grid_manager.calculate_grid(&screen_info, 3);
             // Should handle degenerate cases gracefully (empty cells are acceptable)
-            assert!(true, "Degenerate screen size handled gracefully");
         }
     }
 
@@ -177,10 +175,6 @@ mod grid_integration_tests {
             }
             None => {
                 // No coordinate returned is also valid (e.g., first key of two-key navigation)
-                assert!(
-                    true,
-                    "No coordinate returned (valid for multi-key navigation)"
-                );
             }
         }
     }
@@ -197,7 +191,7 @@ mod grid_integration_tests {
 
         // Reset should work without error
         grid_manager.reset();
-        assert!(true, "Grid reset completed successfully");
+        // Grid reset completed successfully
 
         // Should be able to generate cells after reset
         let cells = grid_manager.calculate_grid(&screen_info, 3);

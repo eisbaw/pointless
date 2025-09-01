@@ -90,7 +90,6 @@ mod x11_integration_tests {
                 match client.warp_cursor(center_x, center_y) {
                     Ok(_) => {
                         // Success - cursor positioning works
-                        assert!(true, "Cursor positioning succeeded");
                     }
                     Err(e) => {
                         // This might fail in some environments (e.g., Xvfb without input)
@@ -122,11 +121,9 @@ mod x11_integration_tests {
                 match result {
                     Ok(_) => {
                         // Some X11 implementations allow negative coordinates
-                        assert!(true, "X11 allows negative coordinates");
                     }
                     Err(_) => {
                         // Expected behavior - invalid coordinates should be rejected
-                        assert!(true, "X11 properly rejects invalid coordinates");
                     }
                 }
             }

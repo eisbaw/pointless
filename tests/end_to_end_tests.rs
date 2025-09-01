@@ -109,7 +109,6 @@ mod end_to_end_tests {
 
                 // Initialize grid manager
                 let grid_manager = GridManager::new(config.grid_type.clone());
-                assert!(true, "GridManager should initialize successfully");
 
                 // Initialize input handler
                 let input_result = InputHandler::new(config.modifier_key.clone(), &x11_client);
@@ -123,7 +122,7 @@ mod end_to_end_tests {
                 let overlay_result = renderer.create_overlay(&x11_client, &config);
 
                 // Test basic interaction between components
-                let cells = grid_manager.calculate_grid(&screen_info, config.grid_density);
+                let cells = grid_manager.calculate_grid(screen_info, config.grid_density);
                 assert!(!cells.is_empty(), "GridManager should generate cells");
 
                 // Test that renderer can work with the grid cells if overlay was created
@@ -131,7 +130,7 @@ mod end_to_end_tests {
                     Ok(_) => {
                         let render_result = renderer.draw_grid(&x11_client, &cells);
                         match render_result {
-                            Ok(_) => assert!(true, "Renderer successfully drew grid"),
+                            Ok(_) => {} // Rendering succeeded
                             Err(e) => {
                                 // Rendering might fail in some test environments
                                 eprintln!(
@@ -174,11 +173,10 @@ mod end_to_end_tests {
                 eprintln!("Unexpectedly connected to :999 display");
             }
             Err(PointlessError::X11ConnectionFailed { .. }) => {
-                // Expected behavior
-                assert!(true, "Properly failed to connect to invalid display");
+                // Expected behavior - connection failed as intended
             }
-            Err(e) => {
-                assert!(true, "Error properly propagated: {}", e);
+            Err(_e) => {
+                // Error was properly propagated
             }
         }
 
@@ -217,7 +215,7 @@ mod end_to_end_tests {
                     let _ = GridManager::new(config.grid_type.clone());
                     // Test grid calculation
                     let grid_manager = GridManager::new(config.grid_type.clone());
-                    let _ = grid_manager.calculate_grid(&screen_info, config.grid_density);
+                    let _ = grid_manager.calculate_grid(screen_info, config.grid_density);
                     // Components should be dropped cleanly at end of scope
                 }
                 Err(PointlessError::X11ConnectionFailed { .. }) => {
@@ -228,7 +226,7 @@ mod end_to_end_tests {
             }
         }
 
-        assert!(true, "Memory management test completed without crashes");
+        // Memory management test completed successfully if we reach here
     }
 
     #[test]
@@ -274,7 +272,7 @@ mod end_to_end_tests {
             handle.join().expect("Thread should complete successfully");
         }
 
-        assert!(true, "Concurrent access test completed successfully");
+        // Concurrent access test completed successfully if we reach here
     }
 
     #[test]
@@ -303,7 +301,7 @@ mod end_to_end_tests {
 
         for config in edge_case_configs {
             match config.validate() {
-                Ok(_) => assert!(true, "Edge case config should be valid: {:#?}", config),
+                Ok(_) => {} // Edge case config is valid as expected
                 Err(e) => {
                     // Some edge cases might be invalid - that's okay if properly validated
                     eprintln!(
@@ -345,7 +343,7 @@ mod end_to_end_tests {
             // Should be able to create grid manager
             use pointless::grid_manager::GridManager;
             let grid_manager = GridManager::new(grid_type.clone());
-            assert!(true, "GridManager should work with {:?}", grid_type);
+            // GridManager created successfully
 
             // Should be able to generate test cells
             use pointless::ScreenInfo;
@@ -355,8 +353,7 @@ mod end_to_end_tests {
                 root_window: 1,
             };
             let _cells = grid_manager.calculate_grid(&screen_info, 2);
-            // Most grid types should generate cells (some specialized ones might not)
-            assert!(true, "Grid calculation completed for {:?}", grid_type);
+            // Grid calculation completed successfully
         }
     }
 }

@@ -58,12 +58,19 @@ impl HomogeneousGrid {
     #[cfg(debug_assertions)]
     fn validate_state_invariants(&self) {
         // Stack size should match subdivision level (except at root level)
-        let expected_stack_size = if self.subdivision_level == 0 { 0 } else { self.subdivision_level };
+        let expected_stack_size = if self.subdivision_level == 0 {
+            0
+        } else {
+            self.subdivision_level
+        };
         if self.region_stack.len() as u32 != expected_stack_size {
-            eprintln!("INVARIANT VIOLATION: subdivision_level={}, stack_len={}", 
-                     self.subdivision_level, self.region_stack.len());
+            eprintln!(
+                "INVARIANT VIOLATION: subdivision_level={}, stack_len={}",
+                self.subdivision_level,
+                self.region_stack.len()
+            );
         }
-        
+
         // If at root level, current_region should be None
         if self.subdivision_level == 0 && self.current_region.is_some() {
             eprintln!("INVARIANT VIOLATION: At root level but current_region is Some");
@@ -133,15 +140,18 @@ impl HomogeneousGrid {
                         let screen_region = self
                             .current_region
                             .unwrap_or_else(|| Rectangle::new(0, 0, screen.width, screen.height));
-                        
+
                         // Push current region onto stack for proper parent tracking
                         if self.region_stack.len() < MAX_SUBDIVISION_LEVELS as usize {
                             self.region_stack.push(screen_region);
                         } else {
-                            eprintln!("ERROR: Region stack overflow at max subdivisions {}", MAX_SUBDIVISION_LEVELS);
+                            eprintln!(
+                                "ERROR: Region stack overflow at max subdivisions {}",
+                                MAX_SUBDIVISION_LEVELS
+                            );
                             return Some(coord); // Don't subdivide further
                         }
-                        
+
                         let grid_size = std::cmp::min(density, MAX_GRID_SIZE);
                         self.current_region = Some(self.calculate_subdivided_region(
                             &screen_region,
@@ -154,10 +164,10 @@ impl HomogeneousGrid {
 
                     // Reset column selection for next input sequence
                     self.selected_column = None;
-                    
+
                     #[cfg(debug_assertions)]
                     self.validate_state_invariants();
-                    
+
                     return Some(coord);
                 }
             }
@@ -189,10 +199,10 @@ impl HomogeneousGrid {
                 }
             }
             self.selected_column = None;
-            
+
             #[cfg(debug_assertions)]
             self.validate_state_invariants();
-            
+
             return None;
         }
 
@@ -263,7 +273,7 @@ impl GridLayout for HomogeneousGrid {
         self.current_region = None;
         self.subdivision_level = 0;
         self.region_stack.clear();
-        
+
         #[cfg(debug_assertions)]
         self.validate_state_invariants();
     }
