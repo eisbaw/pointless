@@ -3,6 +3,7 @@
 
 pub mod config;
 pub mod constants;
+pub mod coordinate_resolver;
 pub mod error;
 pub mod grid_manager;
 pub mod grids;

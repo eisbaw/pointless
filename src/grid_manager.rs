@@ -50,13 +50,8 @@ impl GridManager {
             self.current_grid
                 .process_key_with_screen(key, self.current_level, screen, density)
         {
-            // Calculate grid on demand to find the corresponding screen coordinate
-            let cells = self.calculate_grid(screen, density);
-            for cell in &cells {
-                if cell.coord == coord {
-                    return Some(cell.center());
-                }
-            }
+            // Use efficient coordinate transformation without full grid recalculation
+            return Some(self.current_grid.grid_to_screen_coord(coord, screen, density));
         }
         None
     }

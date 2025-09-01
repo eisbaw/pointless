@@ -1,5 +1,6 @@
 mod config;
 mod constants;
+mod coordinate_resolver;
 mod error;
 mod grid_manager;
 mod grids;

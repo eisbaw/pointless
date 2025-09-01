@@ -43,8 +43,8 @@ impl InputHandler {
                 ModifierKey::Ctrl => ("Control_L", ControlMask),
             };
 
-            let keysym_cstring = CString::new(keysym_name)
-                .map_err(|_| PointlessError::ModifierKeyNotFound {
+            let keysym_cstring =
+                CString::new(keysym_name).map_err(|_| PointlessError::ModifierKeyNotFound {
                     key_name: format!("invalid key name: {}", keysym_name),
                 })?;
             let keysym = XStringToKeysym(keysym_cstring.as_ptr());

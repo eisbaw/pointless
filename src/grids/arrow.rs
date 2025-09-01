@@ -194,4 +194,26 @@ impl GridLayout for ArrowGrid {
         self.grid_stack.clear();
         self.current_pos = GridCoord { x: 1, y: 1 };
     }
+    
+    fn grid_to_screen_coord(&self, coord: GridCoord, screen: &ScreenInfo, density: u32) -> ScreenCoord {
+        use crate::coordinate_resolver::CoordinateResolver;
+        
+        // Arrow grids are hierarchical - use current grid stack to calculate position
+        if let Some(current_level) = self.grid_stack.last() {
+            // We're in a subdivided level, calculate within the current region
+            let cols = 3;
+            let rows = 3;
+            
+            let cell_width = current_level.size / cols;
+            let cell_height = current_level.size / rows;
+            
+            let x = current_level.center.x - (cell_width as i32) + (coord.x * cell_width) as i32;
+            let y = current_level.center.y - (cell_height as i32) + (coord.y * cell_height) as i32;
+            
+            ScreenCoord { x, y }
+        } else {
+            // Use the coordinate resolver for top-level calculation
+            CoordinateResolver::grid_to_screen_arrow(coord, screen, density)
+        }
+    }
 }

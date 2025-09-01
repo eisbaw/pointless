@@ -14,7 +14,7 @@ pub use vim::VimGrid;
 #[cfg(feature = "vision-grids")]
 pub use vision::{ColorGrid, EdgeGrid, FeatureGrid, HoughGrid, RectangleGrid};
 
-use crate::types::{GridCell, GridCoord, KeyCode};
+use crate::types::{GridCell, GridCoord, KeyCode, ScreenCoord};
 use crate::x11_client::ScreenInfo;
 
 pub trait GridLayout {
@@ -41,6 +41,9 @@ pub trait GridLayout {
 
     /// Reset navigation state
     fn reset(&mut self);
+    
+    /// Convert grid coordinate to screen coordinate efficiently (without full grid calculation)
+    fn grid_to_screen_coord(&self, coord: GridCoord, screen: &ScreenInfo, density: u32) -> ScreenCoord;
 }
 
 #[cfg(test)]

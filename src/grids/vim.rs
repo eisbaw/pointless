@@ -12,8 +12,8 @@ struct VimJumpTarget {
 #[derive(Debug, Clone)]
 enum VimMovementMode {
     Normal,
-    FindForward,   // After 'w' pressed
-    FindBackward,  // After 'b' pressed
+    FindForward,  // After 'w' pressed
+    FindBackward, // After 'b' pressed
 }
 
 /// Vim Grid provides Vim-like navigation commands
@@ -323,6 +323,13 @@ impl GridLayout for VimGrid {
         self.jump_targets.clear();
         self.pending_multiplier = None;
         self.current_cursor = ScreenCoord { x: 0, y: 0 };
+    }
+    
+    fn grid_to_screen_coord(&self, coord: GridCoord, screen: &ScreenInfo, density: u32) -> ScreenCoord {
+        use crate::coordinate_resolver::CoordinateResolver;
+        
+        // Vim grids already work in screen coordinate space
+        CoordinateResolver::grid_to_screen_direct(coord, screen, density)
     }
 }
 

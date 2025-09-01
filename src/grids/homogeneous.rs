@@ -1,6 +1,6 @@
 use super::GridLayout;
 use crate::constants::*;
-use crate::types::{GridCell, GridCoord, KeyCode, Rectangle};
+use crate::types::{GridCell, GridCoord, KeyCode, Rectangle, ScreenCoord};
 use crate::x11_client::ScreenInfo;
 
 // Homogeneous grid implementation with two-key navigation and recursive subdivision
@@ -259,5 +259,23 @@ impl GridLayout for HomogeneousGrid {
         self.selected_column = None;
         self.current_region = None;
         self.subdivision_level = 0;
+    }
+    
+    fn grid_to_screen_coord(&self, coord: GridCoord, screen: &ScreenInfo, density: u32) -> ScreenCoord {
+        use crate::coordinate_resolver::CoordinateResolver;
+        
+        // If we have a current subdivision region, use it instead of full screen
+        if let Some(region) = &self.current_region {
+            let cell_width = region.width / self.cols;
+            let cell_height = region.height / self.rows;
+            
+            let x = region.x + (coord.x * cell_width) as i32 + (cell_width / 2) as i32;
+            let y = region.y + (coord.y * cell_height) as i32 + (cell_height / 2) as i32;
+            
+            ScreenCoord { x, y }
+        } else {
+            // Use the coordinate resolver for full-screen calculation
+            CoordinateResolver::grid_to_screen_homogeneous(coord, screen, density)
+        }
     }
 }
