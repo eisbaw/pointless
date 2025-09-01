@@ -343,6 +343,7 @@ dependencies = [
  "env_logger",
  "log",
  "opencv",
+ "pkg-config",
  "signal-hook",
  "thiserror",
  "x11",

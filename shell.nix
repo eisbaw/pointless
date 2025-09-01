@@ -6,6 +6,7 @@ pkgs.mkShell {
     rustc
     cargo
     rustfmt
+    clippy
     rust-analyzer
     
     # X11 development libraries

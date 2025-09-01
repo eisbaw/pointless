@@ -6,6 +6,14 @@ description = "A keyboard-driven X11 cursor utility that makes pointing devices 
 license = "MIT"
 repository = "https://github.com/user/pointless"
 
+[lib]
+name = "pointless"
+path = "src/lib.rs"
+
+[[bin]]
+name = "pointless"
+path = "src/main.rs"
+
 [dependencies]
 x11 = "2.21"
 clap = { version = "4.4", features = ["derive"] }
@@ -13,6 +21,9 @@ thiserror = "1.0"
 signal-hook = "0.3"
 log = "0.4"
 env_logger = "0.11"
+
+[build-dependencies]
+pkg-config = "0.3"
 
 [features]
 default = ["basic-grids"]
@@ -22,3 +33,4 @@ vision-grids = ["opencv"]
 [dependencies.opencv]
 version = "0.92"
 optional = true
+

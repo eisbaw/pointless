@@ -2,6 +2,7 @@ mod config;
 mod constants;
 mod error;
 mod grid_manager;
+mod grids;
 mod input_handler;
 mod renderer;
 mod types;
@@ -104,8 +105,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let r = running.clone();
 
     std::thread::spawn(move || {
-        let mut signals =
-            Signals::new(&[SIGINT, SIGTERM]).expect("Failed to create signal handler");
+        let mut signals = Signals::new(&[SIGINT, SIGTERM]).expect("Failed to create signal handler");
         for _ in signals.forever() {
             r.store(false, Ordering::Relaxed);
             break;
@@ -123,7 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Calculate and show grid
                 let cells = grid_manager.calculate_grid(screen_info, config.grid_density);
-                renderer.draw_grid(&x11_client, cells)?;
+                renderer.draw_grid(&x11_client, &cells)?;
                 renderer.show_overlay(&x11_client)?;
             }
             InputEvent::ModifierReleased => {
@@ -137,7 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 debug!("Navigation key pressed: {}", keycode);
 
                 // Process navigation and move cursor
-                if let Some(target_pos) = grid_manager.process_key(keycode) {
+                if let Some(target_pos) = grid_manager.process_key(keycode, screen_info, config.grid_density) {
                     match x11_client.warp_cursor(target_pos.x, target_pos.y) {
                         Ok(()) => {
                             debug!("Cursor moved to: ({}, {})", target_pos.x, target_pos.y);

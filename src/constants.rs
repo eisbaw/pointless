@@ -44,6 +44,16 @@ pub const KEYCODE_0: u32 = 19;
 // Special keys
 pub const KEYCODE_ESCAPE: u32 = 9;
 pub const KEYCODE_ENTER: u32 = 36;
+pub const KEYCODE_SPACE: u32 = 65;
+
+// Arrow keys
+pub const KEYCODE_UP: u32 = 111;
+pub const KEYCODE_DOWN: u32 = 116;
+pub const KEYCODE_LEFT: u32 = 113;
+pub const KEYCODE_RIGHT: u32 = 114;
+
+// Additional special characters
+pub const KEYCODE_DOLLAR: u32 = 21; // Shift+4
 
 // Grid configuration constants
 pub const DEFAULT_GRID_SIZE: u32 = 4;

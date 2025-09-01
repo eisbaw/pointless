@@ -21,25 +21,25 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Add minimal bitmap font labels
 
 ## Phase 3: QWERTY Grid
-- Map QWERTY key positions to screen coordinates
-- Implement single key to region mapping
-- Add refinement subdivision within selected regions
-- Create visual indicators for QWERTY layout projection
+- DONE: Map QWERTY key positions to screen coordinates
+- DONE: Implement single key to region mapping
+- DONE: Add refinement subdivision within selected regions
+- DONE: Create visual indicators for QWERTY layout projection
 
 ## Phase 4: Arrow Key Grid
-- Implement 3x3 grid system with center default
-- Add arrow key navigation between cells
-- Create hierarchical subdivision with Enter key
-- Add Escape key to ascend grid levels
-- Handle recursive grid state management
+- DONE: Implement 3x3 grid system with center default
+- DONE: Add arrow key navigation between cells
+- DONE: Create hierarchical subdivision with Enter key
+- DONE: Add Escape key to ascend grid levels
+- DONE: Handle recursive grid state management
 
 ## Phase 5: Vim Grid
-- Implement h/j/k/l incremental movement
-- Add number prefix support for movements
-- Create w/b jump target patterns (forward/backward)
-- Implement f{1-9} numbered jump system
-- Add H/M/L screen positioning (top/middle/bottom)
-- Implement 0/$ edge positioning and gg/G corners
+- DONE: Implement h/j/k/l incremental movement
+- DONE: Add number prefix support for movements
+- DONE: Create w/b jump target patterns (forward/backward)
+- DONE: Implement f{1-9} numbered jump system (basic implementation)
+- DONE: Add H/M/L screen positioning (basic implementation)
+- DONE: Implement 0/$ edge positioning and gg/G corners (basic implementation)
 
 ## Phase 6: Modularity & Polish
 - DONE: Create pluggable GridLayout trait system
@@ -59,10 +59,10 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - Create SIFT/ORB feature detection grid
 
 ## Testing & Documentation
-- Set up Xephyr testing environment
-- Create visual reference PNG screenshots
-- Implement automated screenshot comparison
-- Write unit tests for all grid types
+- DONE: Set up Xephyr testing environment
+- DONE: Create visual reference PNG screenshots
+- DONE: Implement automated screenshot comparison
+- DONE: Write unit tests for all grid types
 - Add integration tests for X11 compatibility
 - Create man page documentation
 - Write usage examples and tutorials
