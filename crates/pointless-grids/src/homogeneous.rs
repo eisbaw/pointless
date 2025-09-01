@@ -1,5 +1,7 @@
-use crate::{GridLayout, GridCell, GridCoord, KeyCode};
-use crate::input::{keycodes, keycode_to_letter, keycode_to_number, letter_to_column, number_to_row};
+use crate::input::{
+    keycode_to_letter, keycode_to_number, keycodes, letter_to_column, number_to_row,
+};
+use crate::{GridCell, GridCoord, GridLayout, KeyCode};
 use pointless_x11::{Rectangle, ScreenInfo};
 
 // Grid configuration constants with rationale
@@ -30,6 +32,7 @@ pub struct HomogeneousGrid {
     current_region: Option<Rectangle>,
     subdivision_level: u32,
     max_subdivisions: u32,
+    region_stack: Vec<Rectangle>,
 }
 
 impl Default for HomogeneousGrid {
@@ -47,6 +50,23 @@ impl HomogeneousGrid {
             current_region: None,
             subdivision_level: 0,
             max_subdivisions: MAX_SUBDIVISION_LEVELS,
+            region_stack: Vec::with_capacity(MAX_SUBDIVISION_LEVELS as usize),
+        }
+    }
+
+    /// Validate internal state invariants for debugging
+    #[cfg(debug_assertions)]
+    fn validate_state_invariants(&self) {
+        // Stack size should match subdivision level (except at root level)
+        let expected_stack_size = if self.subdivision_level == 0 { 0 } else { self.subdivision_level };
+        if self.region_stack.len() as u32 != expected_stack_size {
+            eprintln!("INVARIANT VIOLATION: subdivision_level={}, stack_len={}", 
+                     self.subdivision_level, self.region_stack.len());
+        }
+        
+        // If at root level, current_region should be None
+        if self.subdivision_level == 0 && self.current_region.is_some() {
+            eprintln!("INVARIANT VIOLATION: At root level but current_region is Some");
         }
     }
 
@@ -113,6 +133,15 @@ impl HomogeneousGrid {
                         let screen_region = self
                             .current_region
                             .unwrap_or_else(|| Rectangle::new(0, 0, screen.width, screen.height));
+                        
+                        // Push current region onto stack for proper parent tracking
+                        if self.region_stack.len() < MAX_SUBDIVISION_LEVELS as usize {
+                            self.region_stack.push(screen_region);
+                        } else {
+                            eprintln!("ERROR: Region stack overflow at max subdivisions {}", MAX_SUBDIVISION_LEVELS);
+                            return Some(coord); // Don't subdivide further
+                        }
+                        
                         let grid_size = std::cmp::min(density, MAX_GRID_SIZE);
                         self.current_region = Some(self.calculate_subdivided_region(
                             &screen_region,
@@ -125,6 +154,10 @@ impl HomogeneousGrid {
 
                     // Reset column selection for next input sequence
                     self.selected_column = None;
+                    
+                    #[cfg(debug_assertions)]
+                    self.validate_state_invariants();
+                    
                     return Some(coord);
                 }
             }
@@ -134,15 +167,32 @@ impl HomogeneousGrid {
         if key == keycodes::ESCAPE {
             if self.subdivision_level > 0 {
                 self.subdivision_level -= 1;
-                // Reset current region to parent region
+                // Restore parent region from stack
                 if self.subdivision_level == 0 {
                     self.current_region = None;
+                    self.region_stack.clear(); // Clear stack when returning to root level
                 } else {
-                    // TODO: Properly track parent regions in a stack for proper MPED compliance
-                    self.current_region = None;
+                    // Pop the parent region from the stack
+                    match self.region_stack.pop() {
+                        Some(parent_region) => {
+                            self.current_region = Some(parent_region);
+                        }
+                        None => {
+                            // Critical invariant violation: subdivision_level > 0 but empty stack
+                            eprintln!("ERROR: Region stack empty at subdivision level {}, resetting to root", 
+                                     self.subdivision_level + 1);
+                            self.subdivision_level = 0;
+                            self.current_region = None;
+                            self.region_stack.clear();
+                        }
+                    }
                 }
             }
             self.selected_column = None;
+            
+            #[cfg(debug_assertions)]
+            self.validate_state_invariants();
+            
             return None;
         }
 
@@ -195,7 +245,12 @@ impl GridLayout for HomogeneousGrid {
         cells
     }
 
-    fn process_key(&mut self, key: KeyCode, screen: &ScreenInfo, current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        screen: &ScreenInfo,
+        current_level: u32,
+    ) -> Option<GridCoord> {
         self.process_key_with_screen(key, current_level, screen, DEFAULT_GRID_SIZE)
     }
 
@@ -207,5 +262,9 @@ impl GridLayout for HomogeneousGrid {
         self.selected_column = None;
         self.current_region = None;
         self.subdivision_level = 0;
+        self.region_stack.clear();
+        
+        #[cfg(debug_assertions)]
+        self.validate_state_invariants();
     }
 }
