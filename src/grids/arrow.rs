@@ -16,6 +16,12 @@ pub struct ArrowGrid {
     max_levels: u32,
 }
 
+impl Default for ArrowGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ArrowGrid {
     pub fn new() -> Self {
         Self {

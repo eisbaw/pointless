@@ -13,6 +13,12 @@ pub struct HomogeneousGrid {
     max_subdivisions: u32,
 }
 
+impl Default for HomogeneousGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HomogeneousGrid {
     pub fn new() -> Self {
         Self {

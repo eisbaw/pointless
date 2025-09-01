@@ -1,0 +1,338 @@
+#[cfg(feature = "vision-grids")]
+use opencv::prelude::*;
+#[cfg(feature = "vision-grids")]
+use opencv::{core, imgproc};
+#[cfg(feature = "vision-grids")]
+use std::collections::HashMap;
+
+#[cfg(feature = "vision-grids")]
+use crate::grids::GridLayout;
+#[cfg(feature = "vision-grids")]
+use crate::types::{GridCell, GridCoord, KeyCode, Rectangle, ScreenCoord};
+#[cfg(feature = "vision-grids")]
+use crate::x11_client::ScreenInfo;
+#[cfg(feature = "vision-grids")]
+use crate::constants::*;
+
+#[cfg(feature = "vision-grids")]
+pub struct EdgeGrid {
+    screenshot: Option<core::Mat>,
+    edge_regions: Vec<EdgeRegion>,
+    last_update: std::time::Instant,
+    refresh_interval: std::time::Duration,
+    jump_target_map: HashMap<KeyCode, usize>,
+    grid_size: u32, // Size of analysis grid (e.g., 8x8)
+    density_threshold: f64, // Minimum edge density to consider a region
+}
+
+#[cfg(feature = "vision-grids")]
+#[derive(Debug, Clone)]
+struct EdgeRegion {
+    center: ScreenCoord,
+    density: f64, // Edge density as percentage
+    region_rect: core::Rect,
+}
+
+#[cfg(feature = "vision-grids")]
+impl Default for EdgeGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "vision-grids")]
+impl EdgeGrid {
+    pub fn new() -> Self {
+        let mut jump_target_map = HashMap::new();
+        // Map number keys 1-9 to jump targets
+        for i in 1..=9 {
+            let keycode = match i {
+                1 => KEYCODE_1,
+                2 => KEYCODE_2,
+                3 => KEYCODE_3,
+                4 => KEYCODE_4,
+                5 => KEYCODE_5,
+                6 => KEYCODE_6,
+                7 => KEYCODE_7,
+                8 => KEYCODE_8,
+                9 => KEYCODE_9,
+                _ => continue,
+            };
+            jump_target_map.insert(keycode, i - 1);
+        }
+
+        Self {
+            screenshot: None,
+            edge_regions: Vec::new(),
+            last_update: std::time::Instant::now(),
+            refresh_interval: std::time::Duration::from_millis(500),
+            jump_target_map,
+            grid_size: 8, // 8x8 analysis grid
+            density_threshold: 0.1, // 10% edge density minimum
+        }
+    }
+
+    fn update_screenshot_if_needed(&mut self, screen: &ScreenInfo) -> Result<(), opencv::Error> {
+        let now = std::time::Instant::now();
+        if now.duration_since(self.last_update) > self.refresh_interval || self.screenshot.is_none() {
+            // TODO: Implement actual X11 screenshot capture
+            // For now, create a dummy image
+            self.screenshot = Some(core::Mat::zeros(
+                screen.height as i32,
+                screen.width as i32,
+                core::CV_8UC3,
+            )?.to_mat()?);
+            
+            self.analyze_edge_density(screen)?;
+            self.last_update = now;
+        }
+        Ok(())
+    }
+
+    fn analyze_edge_density(&mut self, screen: &ScreenInfo) -> Result<(), opencv::Error> {
+        if let Some(ref screenshot) = self.screenshot {
+            // Convert to grayscale
+            let mut gray = core::Mat::default();
+            imgproc::cvt_color(screenshot, &mut gray, imgproc::COLOR_BGR2GRAY, 0)?;
+
+            // Apply Gaussian blur to reduce noise
+            let mut blurred = core::Mat::default();
+            imgproc::gaussian_blur(
+                &gray,
+                &mut blurred,
+                core::Size::new(5, 5),
+                1.0,
+                0.0,
+                core::BORDER_DEFAULT,
+            )?;
+
+            // Edge detection using Canny
+            let mut edges = core::Mat::default();
+            imgproc::canny(&blurred, &mut edges, 50.0, 150.0, 3, false)?;
+
+            // Divide screen into grid and analyze edge density in each cell
+            self.edge_regions.clear();
+            
+            let cell_width = screen.width / self.grid_size;
+            let cell_height = screen.height / self.grid_size;
+
+            for row in 0..self.grid_size {
+                for col in 0..self.grid_size {
+                    let x = (col * cell_width) as i32;
+                    let y = (row * cell_height) as i32;
+                    let w = cell_width as i32;
+                    let h = cell_height as i32;
+
+                    let region_rect = core::Rect::new(x, y, w, h);
+                    
+                    // Extract region from edge image
+                    let roi = edges.roi(region_rect)?;
+                    
+                    // Calculate edge density (percentage of edge pixels)
+                    let total_pixels = (w * h) as f64;
+                    let edge_pixels = core::count_non_zero(&roi)? as f64;
+                    let density = edge_pixels / total_pixels;
+
+                    // Only consider regions with significant edge density
+                    if density >= self.density_threshold {
+                        let center = ScreenCoord {
+                            x: x + w / 2,
+                            y: y + h / 2,
+                        };
+
+                        self.edge_regions.push(EdgeRegion {
+                            center,
+                            density,
+                            region_rect,
+                        });
+                    }
+                }
+            }
+
+            // Sort regions by density (highest first) for consistent ordering
+            self.edge_regions.sort_by(|a, b| {
+                b.density.partial_cmp(&a.density).unwrap_or(std::cmp::Ordering::Equal)
+            });
+
+            // Keep only the top 9 regions
+            self.edge_regions.truncate(9);
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "vision-grids")]
+impl GridLayout for EdgeGrid {
+    fn calculate_grid(&self, _screen: &ScreenInfo, _density: u32) -> Vec<GridCell> {
+        let mut cells = Vec::new();
+        
+        // Create cells for each high-density edge region
+        for (i, region) in self.edge_regions.iter().enumerate() {
+            let label = format!("{}", i + 1);
+            let cell_size = 35; // Size of selection cell
+            
+            cells.push(GridCell {
+                coord: GridCoord {
+                    x: i as u32,
+                    y: 0,
+                },
+                screen_rect: Rectangle {
+                    x: region.center.x - cell_size / 2,
+                    y: region.center.y - cell_size / 2,
+                    width: cell_size as u32,
+                    height: cell_size as u32,
+                },
+                label,
+            });
+        }
+
+        cells
+    }
+
+    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+        if let Some(&index) = self.jump_target_map.get(&key) {
+            if index < self.edge_regions.len() {
+                return Some(GridCoord {
+                    x: index as u32,
+                    y: 0,
+                });
+            }
+        }
+        None
+    }
+
+    fn process_key_with_screen(
+        &mut self,
+        key: KeyCode,
+        current_level: u32,
+        screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
+        // Update screenshot if needed
+        if let Err(_) = self.update_screenshot_if_needed(screen) {
+            // If screenshot update fails, fall back to basic processing
+            return self.process_key(key, current_level);
+        }
+        
+        self.process_key(key, current_level)
+    }
+
+    fn name(&self) -> &'static str {
+        "Edge Density Grid"
+    }
+
+    fn reset(&mut self) {
+        // Force refresh on next use
+        self.last_update = std::time::Instant::now() - self.refresh_interval;
+    }
+}
+
+#[cfg(all(test, feature = "vision-grids"))]
+mod tests {
+    use super::*;
+    use crate::x11_client::ScreenInfo;
+
+    fn mock_screen() -> ScreenInfo {
+        ScreenInfo {
+            width: 1024,
+            height: 768,
+            root_window: 0,
+        }
+    }
+
+    #[test]
+    fn test_edge_grid_creation() {
+        let grid = EdgeGrid::new();
+        assert_eq!(grid.name(), "Edge Density Grid");
+        assert_eq!(grid.edge_regions.len(), 0);
+        assert_eq!(grid.grid_size, 8);
+        assert_eq!(grid.density_threshold, 0.1);
+    }
+
+    #[test]
+    fn test_edge_grid_key_mapping() {
+        let mut grid = EdgeGrid::new();
+        
+        // Add some mock edge regions
+        grid.edge_regions = vec![
+            EdgeRegion {
+                center: ScreenCoord { x: 100, y: 100 },
+                density: 0.3,
+                region_rect: core::Rect::new(80, 80, 40, 40),
+            },
+            EdgeRegion {
+                center: ScreenCoord { x: 200, y: 200 },
+                density: 0.25,
+                region_rect: core::Rect::new(180, 180, 40, 40),
+            },
+        ];
+
+        let result = grid.process_key(KEYCODE_1, 0);
+        assert!(result.is_some());
+        let coord = result.unwrap();
+        assert_eq!(coord.x, 0); // First region
+        
+        let result = grid.process_key(KEYCODE_2, 0);
+        assert!(result.is_some());
+        let coord = result.unwrap();
+        assert_eq!(coord.x, 1); // Second region
+    }
+
+    #[test]
+    fn test_edge_grid_calculate() {
+        let mut grid = EdgeGrid::new();
+        let screen = mock_screen();
+        
+        // Add some mock edge regions
+        grid.edge_regions = vec![
+            EdgeRegion {
+                center: ScreenCoord { x: 100, y: 100 },
+                density: 0.3,
+                region_rect: core::Rect::new(80, 80, 40, 40),
+            },
+            EdgeRegion {
+                center: ScreenCoord { x: 200, y: 200 },
+                density: 0.25,
+                region_rect: core::Rect::new(180, 180, 40, 40),
+            },
+        ];
+
+        let cells = grid.calculate_grid(&screen, 4);
+        assert_eq!(cells.len(), 2); // Should have cells for each edge region
+        
+        // Check first cell
+        assert_eq!(cells[0].label, "1");
+        assert_eq!(cells[0].coord.x, 0);
+        
+        // Check that cell is centered on the region
+        let expected_x = 100 - 35 / 2; // center.x - cell_size / 2
+        let expected_y = 100 - 35 / 2;
+        assert_eq!(cells[0].screen_rect.x, expected_x);
+        assert_eq!(cells[0].screen_rect.y, expected_y);
+    }
+
+    #[test]
+    fn test_edge_region_sorting() {
+        let mut regions = vec![
+            EdgeRegion {
+                center: ScreenCoord { x: 100, y: 100 },
+                density: 0.2, // Lower density
+                region_rect: core::Rect::new(80, 80, 40, 40),
+            },
+            EdgeRegion {
+                center: ScreenCoord { x: 200, y: 200 },
+                density: 0.35, // Higher density
+                region_rect: core::Rect::new(180, 180, 40, 40),
+            },
+        ];
+
+        // Sort by density (highest first)
+        regions.sort_by(|a, b| {
+            b.density.partial_cmp(&a.density).unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        // Higher density region should come first
+        assert_eq!(regions[0].density, 0.35);
+        assert_eq!(regions[1].density, 0.2);
+    }
+}

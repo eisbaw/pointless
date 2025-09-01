@@ -1,0 +1,333 @@
+#[cfg(feature = "vision-grids")]
+use opencv::prelude::*;
+#[cfg(feature = "vision-grids")]
+use opencv::{core, imgproc};
+#[cfg(feature = "vision-grids")]
+use std::collections::HashMap;
+
+#[cfg(feature = "vision-grids")]
+use crate::grids::GridLayout;
+#[cfg(feature = "vision-grids")]
+use crate::types::{GridCell, GridCoord, KeyCode, Rectangle, ScreenCoord};
+#[cfg(feature = "vision-grids")]
+use crate::x11_client::ScreenInfo;
+#[cfg(feature = "vision-grids")]
+use crate::constants::*;
+
+#[cfg(feature = "vision-grids")]
+pub struct RectangleGrid {
+    screenshot: Option<core::Mat>,
+    detected_rects: Vec<core::Rect>,
+    morph_kernel: core::Mat,
+    last_update: std::time::Instant,
+    refresh_interval: std::time::Duration,
+    jump_target_map: HashMap<KeyCode, usize>, // Maps number keys to rectangle indices
+    min_rect_area: i32,
+    max_rect_count: usize,
+}
+
+#[cfg(feature = "vision-grids")]
+impl Default for RectangleGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "vision-grids")]
+impl RectangleGrid {
+    pub fn new() -> Self {
+        let mut jump_target_map = HashMap::new();
+        // Map number keys 1-9 to jump targets
+        for i in 1..=9 {
+            let keycode = match i {
+                1 => KEYCODE_1,
+                2 => KEYCODE_2,
+                3 => KEYCODE_3,
+                4 => KEYCODE_4,
+                5 => KEYCODE_5,
+                6 => KEYCODE_6,
+                7 => KEYCODE_7,
+                8 => KEYCODE_8,
+                9 => KEYCODE_9,
+                _ => continue,
+            };
+            jump_target_map.insert(keycode, i - 1);
+        }
+
+        // Create morphological kernel (5x5 rectangular kernel)
+        let morph_kernel = imgproc::get_structuring_element(
+            imgproc::MORPH_RECT,
+            core::Size::new(5, 5),
+            core::Point::new(-1, -1),
+        ).unwrap_or_else(|_| core::Mat::default());
+
+        Self {
+            screenshot: None,
+            detected_rects: Vec::new(),
+            morph_kernel,
+            last_update: std::time::Instant::now(),
+            refresh_interval: std::time::Duration::from_millis(500),
+            jump_target_map,
+            min_rect_area: 400, // Minimum area for detected rectangles (20x20 pixels)
+            max_rect_count: 9,  // Maximum number of rectangles to track
+        }
+    }
+
+    fn update_screenshot_if_needed(&mut self, screen: &ScreenInfo) -> Result<(), opencv::Error> {
+        let now = std::time::Instant::now();
+        if now.duration_since(self.last_update) > self.refresh_interval || self.screenshot.is_none() {
+            // TODO: Implement actual X11 screenshot capture
+            // For now, create a dummy image
+            self.screenshot = Some(core::Mat::zeros(
+                screen.height as i32,
+                screen.width as i32,
+                core::CV_8UC3,
+            )?.to_mat()?);
+            
+            self.detect_rectangles()?;
+            self.last_update = now;
+        }
+        Ok(())
+    }
+
+    fn detect_rectangles(&mut self) -> Result<(), opencv::Error> {
+        if let Some(ref screenshot) = self.screenshot {
+            // Convert to grayscale
+            let mut gray = core::Mat::default();
+            imgproc::cvt_color(screenshot, &mut gray, imgproc::COLOR_BGR2GRAY, 0)?;
+
+            // Apply threshold to create binary image
+            let mut binary = core::Mat::default();
+            imgproc::threshold(
+                &gray,
+                &mut binary,
+                0.0,
+                255.0,
+                imgproc::THRESH_BINARY + imgproc::THRESH_OTSU,
+            )?;
+
+            // Morphological operations to clean up the image
+            let mut opened = core::Mat::default();
+            imgproc::morphology_ex(
+                &binary,
+                &mut opened,
+                imgproc::MORPH_OPEN,
+                &self.morph_kernel,
+                core::Point::new(-1, -1),
+                1,
+                core::BORDER_CONSTANT,
+                imgproc::morphology_default_border_value()?,
+            )?;
+
+            let mut closed = core::Mat::default();
+            imgproc::morphology_ex(
+                &opened,
+                &mut closed,
+                imgproc::MORPH_CLOSE,
+                &self.morph_kernel,
+                core::Point::new(-1, -1),
+                1,
+                core::BORDER_CONSTANT,
+                imgproc::morphology_default_border_value()?,
+            )?;
+
+            // Find contours
+            let mut contours = core::Vector::<core::Vector<core::Point>>::new();
+            let mut hierarchy = core::Mat::default();
+            imgproc::find_contours(
+                &closed,
+                &mut contours,
+                imgproc::RETR_EXTERNAL,
+                imgproc::CHAIN_APPROX_SIMPLE,
+                core::Point::new(0, 0),
+            )?;
+
+            // Filter contours to find rectangles
+            self.detected_rects.clear();
+            for i in 0..contours.len() {
+                let contour = contours.get(i)?;
+                let area = imgproc::contour_area(&contour, false)?;
+                
+                if (area as i32) < self.min_rect_area {
+                    continue; // Skip small contours
+                }
+
+                // Approximate contour to polygon
+                let mut approx = core::Vector::<core::Point>::new();
+                let epsilon = 0.02 * imgproc::arc_length(&contour, true)?;
+                imgproc::approx_poly_dp(&contour, &mut approx, epsilon, true)?;
+
+                // Check if polygon has 4 vertices (rectangle-like)
+                if approx.len() == 4 {
+                    let bounding_rect = imgproc::bounding_rect(&contour)?;
+                    self.detected_rects.push(bounding_rect);
+
+                    if self.detected_rects.len() >= self.max_rect_count {
+                        break;
+                    }
+                }
+            }
+
+            // Sort rectangles by area (largest first) for consistent ordering
+            self.detected_rects.sort_by(|a, b| {
+                let area_a = a.width * a.height;
+                let area_b = b.width * b.height;
+                area_b.cmp(&area_a)
+            });
+
+            // Keep only the largest rectangles
+            self.detected_rects.truncate(self.max_rect_count);
+        }
+        Ok(())
+    }
+
+    fn rect_center(&self, rect: &core::Rect) -> ScreenCoord {
+        ScreenCoord {
+            x: rect.x + rect.width / 2,
+            y: rect.y + rect.height / 2,
+        }
+    }
+}
+
+#[cfg(feature = "vision-grids")]
+impl GridLayout for RectangleGrid {
+    fn calculate_grid(&self, _screen: &ScreenInfo, _density: u32) -> Vec<GridCell> {
+        let mut cells = Vec::new();
+        
+        // Create cells for each detected rectangle
+        for (i, rect) in self.detected_rects.iter().enumerate() {
+            let label = format!("{}", i + 1);
+            let center = self.rect_center(rect);
+            
+            // Create a small cell at the center of each rectangle
+            let cell_size = 30;
+            
+            cells.push(GridCell {
+                coord: GridCoord {
+                    x: i as u32,
+                    y: 0,
+                },
+                screen_rect: Rectangle {
+                    x: center.x - cell_size / 2,
+                    y: center.y - cell_size / 2,
+                    width: cell_size as u32,
+                    height: cell_size as u32,
+                },
+                label,
+            });
+        }
+
+        cells
+    }
+
+    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+        if let Some(&index) = self.jump_target_map.get(&key) {
+            if index < self.detected_rects.len() {
+                return Some(GridCoord {
+                    x: index as u32,
+                    y: 0,
+                });
+            }
+        }
+        None
+    }
+
+    fn process_key_with_screen(
+        &mut self,
+        key: KeyCode,
+        current_level: u32,
+        screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
+        // Update screenshot if needed
+        if let Err(_) = self.update_screenshot_if_needed(screen) {
+            // If screenshot update fails, fall back to basic processing
+            return self.process_key(key, current_level);
+        }
+        
+        self.process_key(key, current_level)
+    }
+
+    fn name(&self) -> &'static str {
+        "Rectangle Detection Grid"
+    }
+
+    fn reset(&mut self) {
+        // Force refresh on next use
+        self.last_update = std::time::Instant::now() - self.refresh_interval;
+    }
+}
+
+#[cfg(all(test, feature = "vision-grids"))]
+mod tests {
+    use super::*;
+    use crate::x11_client::ScreenInfo;
+
+    fn mock_screen() -> ScreenInfo {
+        ScreenInfo {
+            width: 1024,
+            height: 768,
+            root_window: 0,
+        }
+    }
+
+    #[test]
+    fn test_rectangle_grid_creation() {
+        let grid = RectangleGrid::new();
+        assert_eq!(grid.name(), "Rectangle Detection Grid");
+        assert_eq!(grid.detected_rects.len(), 0);
+        assert_eq!(grid.min_rect_area, 400);
+        assert_eq!(grid.max_rect_count, 9);
+    }
+
+    #[test]
+    fn test_rectangle_grid_key_mapping() {
+        let mut grid = RectangleGrid::new();
+        
+        // Add some mock rectangles
+        grid.detected_rects = vec![
+            core::Rect::new(100, 100, 50, 50),
+            core::Rect::new(200, 200, 60, 60),
+        ];
+
+        let result = grid.process_key(KEYCODE_1, 0);
+        assert!(result.is_some());
+        let coord = result.unwrap();
+        assert_eq!(coord.x, 0); // First rectangle
+        
+        let result = grid.process_key(KEYCODE_2, 0);
+        assert!(result.is_some());
+        let coord = result.unwrap();
+        assert_eq!(coord.x, 1); // Second rectangle
+    }
+
+    #[test]
+    fn test_rectangle_grid_calculate() {
+        let mut grid = RectangleGrid::new();
+        let screen = mock_screen();
+        
+        // Add some mock rectangles
+        grid.detected_rects = vec![
+            core::Rect::new(100, 100, 50, 50),
+            core::Rect::new(200, 200, 60, 60),
+            core::Rect::new(300, 300, 40, 40),
+        ];
+
+        let cells = grid.calculate_grid(&screen, 4);
+        assert_eq!(cells.len(), 3); // Should have cells for each rectangle
+        
+        // Check first cell
+        assert_eq!(cells[0].label, "1");
+        assert_eq!(cells[0].coord.x, 0);
+    }
+
+    #[test]
+    fn test_rect_center() {
+        let grid = RectangleGrid::new();
+        let rect = core::Rect::new(100, 200, 40, 60);
+        
+        let center = grid.rect_center(&rect);
+        assert_eq!(center.x, 120); // 100 + 40/2
+        assert_eq!(center.y, 230); // 200 + 60/2
+    }
+}

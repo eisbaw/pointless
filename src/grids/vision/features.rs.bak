@@ -1,0 +1,370 @@
+#[cfg(feature = "vision-grids")]
+use opencv::prelude::*;
+#[cfg(feature = "vision-grids")]
+use opencv::{core, imgproc, features2d};
+#[cfg(feature = "vision-grids")]
+use std::collections::HashMap;
+
+#[cfg(feature = "vision-grids")]
+use crate::grids::GridLayout;
+#[cfg(feature = "vision-grids")]
+use crate::types::{GridCell, GridCoord, KeyCode, Rectangle};
+#[cfg(feature = "vision-grids")]
+use crate::x11_client::ScreenInfo;
+#[cfg(feature = "vision-grids")]
+use crate::constants::*;
+
+#[cfg(feature = "vision-grids")]
+pub struct FeatureGrid {
+    screenshot: Option<core::Mat>,
+    keypoints: Vec<core::KeyPoint>,
+    last_update: std::time::Instant,
+    refresh_interval: std::time::Duration,
+    jump_target_map: HashMap<KeyCode, usize>,
+    detector: Option<core::Ptr<features2d::ORB>>,
+    max_features: usize,
+    feature_quality: f64,
+}
+
+#[cfg(feature = "vision-grids")]
+impl Default for FeatureGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "vision-grids")]
+impl FeatureGrid {
+    pub fn new() -> Self {
+        let mut jump_target_map = HashMap::new();
+        // Map number keys 1-9 to jump targets
+        for i in 1..=9 {
+            let keycode = match i {
+                1 => KEYCODE_1,
+                2 => KEYCODE_2,
+                3 => KEYCODE_3,
+                4 => KEYCODE_4,
+                5 => KEYCODE_5,
+                6 => KEYCODE_6,
+                7 => KEYCODE_7,
+                8 => KEYCODE_8,
+                9 => KEYCODE_9,
+                _ => continue,
+            };
+            jump_target_map.insert(keycode, i - 1);
+        }
+
+        // Create ORB detector (more reliable than SIFT for real-time use)
+        let detector = features2d::ORB::create(
+            500,    // nfeatures
+            1.2,    // scaleFactor
+            8,      // nlevels
+            31,     // edgeThreshold
+            0,      // firstLevel
+            2,      // WTA_K
+            features2d::ORB_ScoreType::HARRIS_SCORE, // scoreType
+            31,     // patchSize
+            20,     // fastThreshold
+        ).ok();
+
+        Self {
+            screenshot: None,
+            keypoints: Vec::new(),
+            last_update: std::time::Instant::now(),
+            refresh_interval: std::time::Duration::from_millis(400), // Fast refresh for features
+            jump_target_map,
+            detector,
+            max_features: 9,
+            feature_quality: 0.01, // Minimum quality threshold
+        }
+    }
+
+    fn update_screenshot_if_needed(&mut self, screen: &ScreenInfo) -> Result<(), opencv::Error> {
+        let now = std::time::Instant::now();
+        if now.duration_since(self.last_update) > self.refresh_interval || self.screenshot.is_none() {
+            // TODO: Implement actual X11 screenshot capture
+            // For now, create a dummy image
+            self.screenshot = Some(core::Mat::zeros(
+                screen.height as i32,
+                screen.width as i32,
+                core::CV_8UC3,
+            )?.to_mat()?);
+            
+            self.detect_features()?;
+            self.last_update = now;
+        }
+        Ok(())
+    }
+
+    fn detect_features(&mut self) -> Result<(), opencv::Error> {
+        if let Some(ref screenshot) = self.screenshot {
+            if let Some(ref detector) = self.detector {
+                // Convert to grayscale for feature detection
+                let mut gray = core::Mat::default();
+                imgproc::cvt_color(screenshot, &mut gray, imgproc::COLOR_BGR2GRAY, 0)?;
+
+                // Detect keypoints
+                let mut raw_keypoints = core::Vector::<core::KeyPoint>::new();
+                detector.detect(&gray, &mut raw_keypoints, &core::Mat::default())?;
+
+                // Convert to our format and filter by quality
+                self.keypoints.clear();
+                for i in 0..raw_keypoints.len() {
+                    if let Ok(kp) = raw_keypoints.get(i) {
+                        // Filter by response (feature strength)
+                        if kp.response >= self.feature_quality as f32 {
+                            self.keypoints.push(kp);
+                        }
+                    }
+                }
+
+                // Sort keypoints by response strength (strongest first)
+                self.keypoints.sort_by(|a, b| {
+                    b.response.partial_cmp(&a.response).unwrap_or(std::cmp::Ordering::Equal)
+                });
+
+                // Keep only the strongest features
+                self.keypoints.truncate(self.max_features);
+
+                // If we have too few features, try corner detection as fallback
+                if self.keypoints.len() < 3 {
+                    self.detect_corners_fallback(&gray)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn detect_corners_fallback(&mut self, gray: &core::Mat) -> Result<(), opencv::Error> {
+        // Use goodFeaturesToTrack as fallback when ORB finds too few features
+        let mut corners = core::Vector::<core::Point2f>::new();
+        imgproc::good_features_to_track(
+            gray,
+            &mut corners,
+            self.max_features as i32,
+            0.01,   // qualityLevel
+            30.0,   // minDistance
+            &core::Mat::default(), // mask
+            3,      // blockSize
+            false,  // useHarrisDetector
+            0.04,   // k parameter for Harris detector
+        )?;
+
+        // Convert corners to keypoints
+        self.keypoints.clear();
+        for i in 0..corners.len() {
+            if let Ok(corner) = corners.get(i) {
+                let keypoint = core::KeyPoint::new(
+                    corner,
+                    10.0, // size
+                    -1.0, // angle
+                    50.0, // response (artificial strength)
+                    0,    // octave
+                    -1,   // class_id
+                )?;
+                self.keypoints.push(keypoint);
+            }
+        }
+
+        // Sort by position for consistent ordering (top-left to bottom-right)
+        self.keypoints.sort_by(|a, b| {
+            let dist_a = a.pt.x * a.pt.x + a.pt.y * a.pt.y;
+            let dist_b = b.pt.x * b.pt.x + b.pt.y * b.pt.y;
+            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        Ok(())
+    }
+}
+
+#[cfg(feature = "vision-grids")]
+impl GridLayout for FeatureGrid {
+    fn calculate_grid(&self, _screen: &ScreenInfo, _density: u32) -> Vec<GridCell> {
+        let mut cells = Vec::new();
+        
+        // Create cells for each detected feature point
+        for (i, keypoint) in self.keypoints.iter().enumerate() {
+            let label = format!("{}", i + 1);
+            let cell_size = (keypoint.size as i32).max(25).min(50); // Adaptive size based on feature
+            
+            cells.push(GridCell {
+                coord: GridCoord {
+                    x: i as u32,
+                    y: 0,
+                },
+                screen_rect: Rectangle {
+                    x: keypoint.pt.x as i32 - cell_size / 2,
+                    y: keypoint.pt.y as i32 - cell_size / 2,
+                    width: cell_size as u32,
+                    height: cell_size as u32,
+                },
+                label,
+            });
+        }
+
+        cells
+    }
+
+    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+        if let Some(&index) = self.jump_target_map.get(&key) {
+            if index < self.keypoints.len() {
+                return Some(GridCoord {
+                    x: index as u32,
+                    y: 0,
+                });
+            }
+        }
+        None
+    }
+
+    fn process_key_with_screen(
+        &mut self,
+        key: KeyCode,
+        current_level: u32,
+        screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
+        // Update screenshot if needed
+        if let Err(_) = self.update_screenshot_if_needed(screen) {
+            // If screenshot update fails, fall back to basic processing
+            return self.process_key(key, current_level);
+        }
+        
+        self.process_key(key, current_level)
+    }
+
+    fn name(&self) -> &'static str {
+        "Feature Detection Grid"
+    }
+
+    fn reset(&mut self) {
+        // Force refresh on next use
+        self.last_update = std::time::Instant::now() - self.refresh_interval;
+    }
+}
+
+#[cfg(all(test, feature = "vision-grids"))]
+mod tests {
+    use super::*;
+    use crate::x11_client::ScreenInfo;
+
+    fn mock_screen() -> ScreenInfo {
+        ScreenInfo {
+            width: 1024,
+            height: 768,
+            root_window: 0,
+        }
+    }
+
+    #[test]
+    fn test_feature_grid_creation() {
+        let grid = FeatureGrid::new();
+        assert_eq!(grid.name(), "Feature Detection Grid");
+        assert_eq!(grid.keypoints.len(), 0);
+        assert_eq!(grid.max_features, 9);
+        assert_eq!(grid.feature_quality, 0.01);
+    }
+
+    #[test]
+    fn test_feature_grid_key_mapping() {
+        let mut grid = FeatureGrid::new();
+        
+        // Add some mock keypoints
+        let keypoint1 = core::KeyPoint::new(
+            core::Point2f::new(100.0, 100.0),
+            10.0, -1.0, 50.0, 0, -1,
+        ).unwrap();
+        let keypoint2 = core::KeyPoint::new(
+            core::Point2f::new(200.0, 200.0),
+            15.0, -1.0, 40.0, 0, -1,
+        ).unwrap();
+        
+        grid.keypoints = vec![keypoint1, keypoint2];
+
+        let result = grid.process_key(KEYCODE_1, 0);
+        assert!(result.is_some());
+        let coord = result.unwrap();
+        assert_eq!(coord.x, 0); // First keypoint
+        
+        let result = grid.process_key(KEYCODE_2, 0);
+        assert!(result.is_some());
+        let coord = result.unwrap();
+        assert_eq!(coord.x, 1); // Second keypoint
+    }
+
+    #[test]
+    fn test_feature_grid_calculate() {
+        let mut grid = FeatureGrid::new();
+        let screen = mock_screen();
+        
+        // Add some mock keypoints
+        let keypoint1 = core::KeyPoint::new(
+            core::Point2f::new(100.0, 100.0),
+            10.0, -1.0, 50.0, 0, -1,
+        ).unwrap();
+        let keypoint2 = core::KeyPoint::new(
+            core::Point2f::new(200.0, 200.0),
+            30.0, -1.0, 40.0, 0, -1,
+        ).unwrap();
+        
+        grid.keypoints = vec![keypoint1, keypoint2];
+
+        let cells = grid.calculate_grid(&screen, 4);
+        assert_eq!(cells.len(), 2); // Should have cells for each keypoint
+        
+        // Check first cell
+        assert_eq!(cells[0].label, "1");
+        assert_eq!(cells[0].coord.x, 0);
+        
+        // Check adaptive cell sizing
+        assert_eq!(cells[0].screen_rect.width, 25); // Size clamped to minimum
+        assert_eq!(cells[1].screen_rect.width, 30); // Size based on keypoint size
+    }
+
+    #[test]
+    fn test_keypoint_sorting() {
+        let mut keypoints = vec![
+            core::KeyPoint::new(
+                core::Point2f::new(200.0, 100.0), // Further from origin
+                10.0, -1.0, 30.0, 0, -1,
+            ).unwrap(),
+            core::KeyPoint::new(
+                core::Point2f::new(100.0, 100.0), // Closer to origin
+                10.0, -1.0, 50.0, 0, -1,
+            ).unwrap(),
+        ];
+
+        // Sort by position (distance from origin)
+        keypoints.sort_by(|a, b| {
+            let dist_a = a.pt.x * a.pt.x + a.pt.y * a.pt.y;
+            let dist_b = b.pt.x * b.pt.x + b.pt.y * b.pt.y;
+            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        // Closer point should come first
+        assert_eq!(keypoints[0].pt.x, 100.0);
+        assert_eq!(keypoints[1].pt.x, 200.0);
+    }
+
+    #[test]
+    fn test_adaptive_cell_size() {
+        let grid = FeatureGrid::new();
+        
+        // Test size clamping
+        let small_keypoint = core::KeyPoint::new(
+            core::Point2f::new(100.0, 100.0),
+            5.0, -1.0, 50.0, 0, -1, // Small size
+        ).unwrap();
+        
+        let large_keypoint = core::KeyPoint::new(
+            core::Point2f::new(200.0, 200.0),
+            100.0, -1.0, 40.0, 0, -1, // Large size
+        ).unwrap();
+        
+        let small_size = (small_keypoint.size as i32).max(25).min(50);
+        let large_size = (large_keypoint.size as i32).max(25).min(50);
+        
+        assert_eq!(small_size, 25); // Clamped to minimum
+        assert_eq!(large_size, 50); // Clamped to maximum
+    }
+}

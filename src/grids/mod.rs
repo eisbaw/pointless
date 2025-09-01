@@ -3,10 +3,16 @@ pub mod homogeneous;
 pub mod qwerty;
 pub mod vim;
 
+#[cfg(feature = "vision-grids")]
+pub mod vision;
+
 pub use arrow::ArrowGrid;
 pub use homogeneous::HomogeneousGrid;
 pub use qwerty::QwertyGrid;
 pub use vim::VimGrid;
+
+#[cfg(feature = "vision-grids")]
+pub use vision::{ColorGrid, EdgeGrid, FeatureGrid, HoughGrid, RectangleGrid};
 
 use crate::types::{GridCell, GridCoord, KeyCode};
 use crate::x11_client::ScreenInfo;

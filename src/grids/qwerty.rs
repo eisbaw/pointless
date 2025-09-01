@@ -12,6 +12,12 @@ pub struct QwertyGrid {
     max_refinements: u32,
 }
 
+impl Default for QwertyGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl QwertyGrid {
     pub fn new() -> Self {
         Self {
@@ -56,7 +62,7 @@ impl QwertyGrid {
 
     fn get_region_for_key(&self, keycode: KeyCode, screen: &ScreenInfo) -> Option<Rectangle> {
         // Get the region that this key represents
-        let qwerty_rows = vec![
+        let qwerty_rows = [
             vec![
                 KEYCODE_Q, KEYCODE_W, KEYCODE_E, KEYCODE_R, KEYCODE_T, KEYCODE_Y, KEYCODE_U,
                 KEYCODE_I, KEYCODE_O, KEYCODE_P,
@@ -98,7 +104,7 @@ impl GridLayout for QwertyGrid {
         let mut cells = Vec::new();
 
         // Define QWERTY layout
-        let qwerty_rows = vec![
+        let qwerty_rows = [
             vec![
                 KEYCODE_Q, KEYCODE_W, KEYCODE_E, KEYCODE_R, KEYCODE_T, KEYCODE_Y, KEYCODE_U,
                 KEYCODE_I, KEYCODE_O, KEYCODE_P,
@@ -163,7 +169,7 @@ impl GridLayout for QwertyGrid {
         }
 
         // Check if this is a valid QWERTY key
-        let valid_keys = vec![
+        let valid_keys = [
             KEYCODE_Q, KEYCODE_W, KEYCODE_E, KEYCODE_R, KEYCODE_T, KEYCODE_Y, KEYCODE_U, KEYCODE_I,
             KEYCODE_O, KEYCODE_P, KEYCODE_A, KEYCODE_S, KEYCODE_D, KEYCODE_F, KEYCODE_G, KEYCODE_H,
             KEYCODE_J, KEYCODE_K, KEYCODE_L, KEYCODE_Z, KEYCODE_X, KEYCODE_C, KEYCODE_V, KEYCODE_B,
@@ -184,7 +190,7 @@ impl GridLayout for QwertyGrid {
 
         // Always return the coordinate for cursor movement
         // Find the coordinate for this key
-        let qwerty_rows = vec![
+        let qwerty_rows = [
             vec![
                 KEYCODE_Q, KEYCODE_W, KEYCODE_E, KEYCODE_R, KEYCODE_T, KEYCODE_Y, KEYCODE_U,
                 KEYCODE_I, KEYCODE_O, KEYCODE_P,

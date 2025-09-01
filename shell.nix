@@ -22,12 +22,17 @@ pkgs.mkShell {
     xorg.xorgserver  # For Xephyr testing
     imagemagick      # For screenshot comparison
     
-    # Optional: OpenCV for vision grids (commented out by default)
-    # opencv4
+    # OpenCV and dependencies for vision grids feature
+    opencv4
+    clang
+    llvm
+    libclang
   ];
 
   # AI.rule: Only add functional commands, not noisy echos
   shellHook = ''
+    export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+    export LLVM_CONFIG_PATH="${pkgs.llvm}/bin/llvm-config"
   '';
 
   # Set environment variables for X11 development

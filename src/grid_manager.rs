@@ -1,5 +1,7 @@
 use crate::config::GridType;
 use crate::grids::{ArrowGrid, GridLayout, HomogeneousGrid, QwertyGrid, VimGrid};
+#[cfg(feature = "vision-grids")]
+use crate::grids::{ColorGrid, EdgeGrid, FeatureGrid, HoughGrid, RectangleGrid};
 use crate::types::{GridCell, KeyCode, ScreenCoord};
 use crate::x11_client::ScreenInfo;
 
@@ -15,6 +17,16 @@ impl GridManager {
             GridType::Qwerty => Box::new(QwertyGrid::new()),
             GridType::Arrow => Box::new(ArrowGrid::new()),
             GridType::Vim => Box::new(VimGrid::new()),
+            #[cfg(feature = "vision-grids")]
+            GridType::HoughLines => Box::new(HoughGrid::new()),
+            #[cfg(feature = "vision-grids")]
+            GridType::RectangleFitting => Box::new(RectangleGrid::new()),
+            #[cfg(feature = "vision-grids")]
+            GridType::EdgeDensity => Box::new(EdgeGrid::new()),
+            #[cfg(feature = "vision-grids")]
+            GridType::ColorClustering => Box::new(ColorGrid::new()),
+            #[cfg(feature = "vision-grids")]
+            GridType::FeatureDetection => Box::new(FeatureGrid::new()),
         };
 
         Self {

@@ -26,6 +26,12 @@ pub struct VimGrid {
     movement_step: i32, // Base movement step in pixels
 }
 
+impl Default for VimGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VimGrid {
     pub fn new() -> Self {
         Self {
@@ -143,13 +149,12 @@ impl GridLayout for VimGrid {
                     };
 
                     // Create small rectangles around each jump target
-                    let rect =
-                        Rectangle::new(
-                            target.position.x - crate::constants::VIM_TARGET_OFFSET as i32,
-                            target.position.y - crate::constants::VIM_TARGET_OFFSET as i32,
-                            crate::constants::VIM_TARGET_SIZE,
-                            crate::constants::VIM_TARGET_SIZE
-                        );
+                    let rect = Rectangle::new(
+                        target.position.x - crate::constants::VIM_TARGET_OFFSET as i32,
+                        target.position.y - crate::constants::VIM_TARGET_OFFSET as i32,
+                        crate::constants::VIM_TARGET_SIZE,
+                        crate::constants::VIM_TARGET_SIZE,
+                    );
 
                     cells.push(GridCell::new(coord, rect, target.label.to_string()));
                 }
