@@ -1,0 +1,123 @@
+app-id: com.example.Pointless
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+
+command: pointless
+finish-args:
+  # X11 access for cursor control
+  - --socket=x11
+  - --share=ipc
+  
+  # Device access for input handling
+  - --device=dri
+  
+  # Allow controlling cursor and keyboard
+  - --socket=session-bus
+  
+  # File system access for configuration
+  - --filesystem=xdg-config/pointless:create
+  
+  # For debugging and logs
+  - --filesystem=xdg-cache/pointless:create
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/pointless/cargo
+    RUST_BACKTRACE: '1'
+
+modules:
+  - name: pointless
+    buildsystem: simple
+    build-options:
+      env:
+        CARGO_HOME: /run/build/pointless/cargo
+    build-commands:
+      # Build basic version (vision grids require OpenCV which is complex in Flatpak)
+      - cargo --offline fetch --manifest-path Cargo.toml --verbose
+      - cargo --offline build --release --verbose
+      - install -Dm755 ./target/release/pointless -t /app/bin/
+      - install -Dm644 ./man/man1/pointless.1 -t /app/share/man/man1/
+      - install -Dm644 ./README.md -t /app/share/doc/pointless/
+      - install -Dm644 ./docs/USAGE.md -t /app/share/doc/pointless/
+      - install -Dm644 ./docs/TUTORIAL.md -t /app/share/doc/pointless/
+      
+      # Install desktop file and icon (if available)
+      - |
+        cat > com.example.Pointless.desktop << EOF
+        [Desktop Entry]
+        Name=Pointless
+        Comment=Keyboard-driven X11 cursor positioning utility
+        Exec=pointless
+        Icon=com.example.Pointless
+        Type=Application
+        Categories=Utility;Accessibility;
+        Keywords=cursor;keyboard;navigation;x11;
+        StartupNotify=false
+        Terminal=false
+        EOF
+      - install -Dm644 com.example.Pointless.desktop -t /app/share/applications/
+      
+      # Install metainfo for app store
+      - |
+        cat > com.example.Pointless.metainfo.xml << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <component type="desktop-application">
+          <id>com.example.Pointless</id>
+          <metadata_license>CC0-1.0</metadata_license>
+          <project_license>MIT</project_license>
+          <name>Pointless</name>
+          <summary>Keyboard-driven X11 cursor positioning utility</summary>
+          <description>
+            <p>
+              Pointless is a keyboard-driven cursor positioning utility for X11 that allows
+              precise cursor control using grid-based navigation. Hold a modifier key to show
+              a grid overlay, then navigate using keyboard shortcuts to position your cursor
+              exactly where you want it.
+            </p>
+            <p>Features:</p>
+            <ul>
+              <li>Multiple grid layouts (homogeneous, QWERTY, arrow, Vim)</li>
+              <li>Configurable modifier keys and visual appearance</li>
+              <li>High precision cursor positioning</li>
+              <li>Minimal resource usage and fast response times</li>
+            </ul>
+          </description>
+          <launchable type="desktop-id">com.example.Pointless.desktop</launchable>
+          <url type="homepage">https://github.com/user/pointless</url>
+          <url type="bugtracker">https://github.com/user/pointless/issues</url>
+          <categories>
+            <category>Utility</category>
+            <category>Accessibility</category>
+          </categories>
+          <keywords>
+            <keyword>cursor</keyword>
+            <keyword>keyboard</keyword>
+            <keyword>navigation</keyword>
+            <keyword>x11</keyword>
+            <keyword>accessibility</keyword>
+          </keywords>
+          <content_rating type="oars-1.1"/>
+          <releases>
+            <release version="0.1.0" date="2025-09-01">
+              <description>
+                <p>Initial release with support for multiple grid types and configurable options.</p>
+              </description>
+            </release>
+          </releases>
+        </component>
+        EOF
+      - install -Dm644 com.example.Pointless.metainfo.xml -t /app/share/metainfo/
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - target
+          - build
+          - .git
+      
+      # Generated sources for Cargo dependencies
+      - generated-sources.json

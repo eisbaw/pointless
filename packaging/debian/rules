@@ -1,0 +1,55 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+# Enable hardening
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Use all available cores for building
+export DEB_BUILD_OPTIONS = parallel=$(shell nproc)
+
+# Rust/Cargo configuration
+export CARGO_HOME = $(CURDIR)/debian/cargo_home
+
+%:
+	dh $@ --buildsystem=cargo
+
+override_dh_auto_build:
+	# Build basic version
+	cargo build --release
+	
+	# Build vision version if OpenCV is available
+	if pkg-config --exists opencv4; then \
+		cargo build --release --features vision-grids --bin pointless-vision; \
+	fi
+
+override_dh_auto_install:
+	# Install basic binary
+	install -D -m755 target/release/pointless \
+		$(CURDIR)/debian/pointless/usr/bin/pointless
+	
+	# Install vision binary if built
+	if [ -f target/release/pointless-vision ]; then \
+		install -D -m755 target/release/pointless-vision \
+			$(CURDIR)/debian/pointless-vision/usr/bin/pointless-vision; \
+	fi
+	
+	# Install man page
+	install -D -m644 man/man1/pointless.1 \
+		$(CURDIR)/debian/pointless/usr/share/man/man1/pointless.1
+	
+	# Install documentation
+	install -D -m644 README.md \
+		$(CURDIR)/debian/pointless/usr/share/doc/pointless/README.md
+	install -D -m644 docs/USAGE.md \
+		$(CURDIR)/debian/pointless/usr/share/doc/pointless/USAGE.md
+	install -D -m644 docs/TUTORIAL.md \
+		$(CURDIR)/debian/pointless/usr/share/doc/pointless/TUTORIAL.md
+
+override_dh_auto_clean:
+	cargo clean || true
+	rm -rf $(CARGO_HOME)
+
+override_dh_auto_test:
+	# Run unit tests only (integration tests require X11)
+	cargo test --lib

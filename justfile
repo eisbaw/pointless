@@ -62,3 +62,30 @@ lint:
 # Clean build artifacts
 clean:
     cargo clean
+
+# Package management
+# =================
+
+# Build packages for current distribution
+package:
+    ./packaging/build-packages.sh
+
+# Build packages for all distributions
+package-all:
+    ./packaging/build-packages.sh all
+
+# Build Debian package
+package-deb:
+    ./packaging/build-packages.sh debian
+
+# Build RPM package  
+package-rpm:
+    ./packaging/build-packages.sh rpm
+
+# Build Arch package
+package-arch:
+    ./packaging/build-packages.sh arch
+
+# Build Flatpak package
+package-flatpak:
+    ./packaging/flatpak/build-flatpak.sh

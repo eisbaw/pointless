@@ -1,0 +1,57 @@
+Source: pointless
+Section: x11
+Priority: optional
+Maintainer: Pointless Maintainer <maintainer@example.com>
+Build-Depends: debhelper (>= 13),
+               dh-cargo,
+               cargo,
+               rustc (>= 1.70),
+               libx11-dev,
+               libxext-dev,
+               libxi-dev,
+               pkg-config,
+               libclang-dev,
+               clang
+Standards-Version: 4.6.0
+Homepage: https://github.com/user/pointless
+Vcs-Git: https://github.com/user/pointless.git
+Vcs-Browser: https://github.com/user/pointless
+
+Package: pointless
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: x11-utils
+Suggests: xserver-xephyr (>= 2:1.20)
+Description: Keyboard-driven X11 cursor positioning utility
+ Pointless is a keyboard-driven cursor positioning utility for X11 that allows
+ precise cursor control using grid-based navigation. It provides multiple grid
+ types including homogeneous grids, QWERTY layout projection, arrow key
+ navigation, and Vim-style movement.
+ .
+ Features include:
+  * Multiple grid layouts (homogeneous, QWERTY, arrow, Vim)
+  * Configurable modifier keys and visual appearance
+  * High precision cursor positioning
+  * Optional computer vision-based grids (with OpenCV)
+  * Minimal resource usage and fast response times
+ .
+ This package provides the basic version without computer vision features.
+
+Package: pointless-vision
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libopencv-dev
+Recommends: pointless
+Suggests: xserver-xephyr (>= 2:1.20)
+Description: Pointless with computer vision grid support
+ This package provides Pointless with additional computer vision-based
+ grid types that can analyze screen content to provide intelligent
+ cursor positioning targets.
+ .
+ Additional vision grid types include:
+  * Hough line detection for technical drawings
+  * Rectangle detection for UI elements
+  * Edge density analysis for complex layouts
+  * Color clustering for design work
+  * Feature detection for detailed graphics
+ .
+ This package requires OpenCV and additional system resources.

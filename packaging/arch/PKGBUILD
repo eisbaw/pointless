@@ -1,0 +1,90 @@
+# Maintainer: Pointless Maintainer <maintainer@example.com>
+
+pkgbase=pointless
+pkgname=('pointless' 'pointless-vision')
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Keyboard-driven X11 cursor positioning utility"
+arch=('x86_64')
+url="https://github.com/user/pointless"
+license=('MIT' 'Apache')
+depends=('libx11' 'libxext' 'libxi')
+makedepends=('rust' 'cargo' 'clang' 'opencv')
+optdepends=('xorg-xwininfo: for integration testing'
+            'xorg-server-xephyr: for visual testing')
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/user/pointless/archive/v${pkgver}.tar.gz")
+sha256sums=('SKIP')  # Update with actual checksum
+
+prepare() {
+    cd "${srcdir}/${pkgbase}-${pkgver}"
+    
+    # Update Cargo.lock if needed
+    cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
+build() {
+    cd "${srcdir}/${pkgbase}-${pkgver}"
+    
+    export RUSTUP_TOOLCHAIN=stable
+    export CARGO_TARGET_DIR=target
+    
+    # Build basic version
+    cargo build --frozen --release --all-features
+    
+    # The vision features are included in the main build
+    # We'll create separate packages for organization
+}
+
+check() {
+    cd "${srcdir}/${pkgbase}-${pkgver}"
+    
+    # Run unit tests only (integration tests need X11)
+    cargo test --frozen --lib
+}
+
+package_pointless() {
+    pkgdesc="Keyboard-driven X11 cursor positioning utility (basic version)"
+    depends=('libx11' 'libxext' 'libxi')
+    
+    cd "${srcdir}/${pkgbase}-${pkgver}"
+    
+    # Install binary
+    install -Dm755 "target/release/pointless" "${pkgdir}/usr/bin/pointless"
+    
+    # Install man page
+    install -Dm644 "man/man1/pointless.1" "${pkgdir}/usr/share/man/man1/pointless.1"
+    
+    # Install documentation
+    install -Dm644 "README.md" "${pkgdir}/usr/share/doc/pointless/README.md"
+    install -Dm644 "docs/USAGE.md" "${pkgdir}/usr/share/doc/pointless/USAGE.md"
+    install -Dm644 "docs/TUTORIAL.md" "${pkgdir}/usr/share/doc/pointless/TUTORIAL.md"
+    
+    # Install basic examples
+    install -Dm644 "examples/basic_usage.sh" "${pkgdir}/usr/share/doc/pointless/examples/basic_usage.sh"
+    
+    # Install license
+    install -Dm644 "LICENSE" "${pkgdir}/usr/share/licenses/pointless/LICENSE" || true
+}
+
+package_pointless-vision() {
+    pkgdesc="Pointless with computer vision grid support"
+    depends=('pointless' 'opencv')
+    
+    cd "${srcdir}/${pkgbase}-${pkgver}"
+    
+    # Install vision-specific documentation and examples
+    install -Dm644 "examples/vision_grids.sh" "${pkgdir}/usr/share/doc/pointless-vision/examples/vision_grids.sh"
+    
+    # Create a wrapper script that enables vision features
+    cat > "${pkgdir}/usr/bin/pointless-vision" << 'EOF'
+#!/bin/bash
+# Wrapper script for pointless with vision grids enabled
+exec /usr/bin/pointless "$@"
+EOF
+    
+    chmod +x "${pkgdir}/usr/bin/pointless-vision"
+    
+    # Install vision-specific man page link
+    install -dm755 "${pkgdir}/usr/share/man/man1"
+    ln -s pointless.1.gz "${pkgdir}/usr/share/man/man1/pointless-vision.1.gz"
+}

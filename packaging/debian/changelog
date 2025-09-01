@@ -1,0 +1,10 @@
+pointless (0.1.0-1) unstable; urgency=medium
+
+  * Initial release of pointless keyboard-driven cursor utility
+  * Support for multiple grid types (homogeneous, QWERTY, arrow, Vim)
+  * Configurable modifier keys and visual appearance
+  * Optional computer vision features with OpenCV integration
+  * Comprehensive documentation and man pages
+  * Integration tests and CI/CD pipeline
+
+ -- Pointless Maintainer <maintainer@example.com>  Mon, 01 Sep 2025 12:00:00 +0000
