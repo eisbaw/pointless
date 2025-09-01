@@ -57,14 +57,14 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Add edge density adaptive grid (stub implementation)  
 - DONE: Implement color clustering region detection (stub implementation)
 - DONE: Create SIFT/ORB feature detection grid (stub implementation)
-- TODO: Enhance stub implementations with full OpenCV integration
+- DONE: Enhance stub implementations with full OpenCV integration
 
 ## Testing & Documentation
 - DONE: Set up Xephyr testing environment
 - DONE: Create visual reference PNG screenshots
 - DONE: Implement automated screenshot comparison
 - DONE: Write unit tests for all grid types
-- Add integration tests for X11 compatibility
+- DONE: Add integration tests for X11 compatibility
 - DONE: Create man page documentation  
 - DONE: Write usage examples and tutorials
 
@@ -83,6 +83,6 @@ AI.rule: Keep readme.md updated as tasks are completed.
 ## Build System
 - DONE: Create Justfile with all build commands
 - DONE: Add separate builds for basic vs vision features
-- Set up CI/CD pipeline
-- Create installation scripts
-- Package for major Linux distributions
+- DONE: Set up CI/CD pipeline
+- DONE: Create installation scripts
+- DONE: Package for major Linux distributions

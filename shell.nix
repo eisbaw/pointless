@@ -20,6 +20,10 @@ pkgs.mkShell {
     
     # Testing tools
     xorg.xorgserver  # For Xephyr testing
+    xorg.xwininfo    # For window information queries
+    xorg.xdpyinfo    # For display information
+    xorg.xev         # For event testing
+    xorg.xprop       # For window properties
     imagemagick      # For screenshot comparison
     
     # OpenCV and dependencies for vision grids feature

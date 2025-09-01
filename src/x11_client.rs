@@ -2,10 +2,14 @@ use crate::error::{PointlessError, Result};
 use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use x11::xlib::{
-    Display, GrabModeAsync, XCloseDisplay, XDefaultScreen, XDisplayHeight, XDisplayWidth,
-    XErrorEvent, XEvent, XFlush, XGrabKey, XNextEvent, XOpenDisplay, XPending, XRootWindow,
-    XSelectInput, XSetErrorHandler, XSync, XUngrabKey, XWarpPointer,
+    Display, GrabModeAsync, XCloseDisplay, XDefaultScreen,
+    XDisplayHeight, XDisplayWidth, XErrorEvent, XEvent, XFlush, XGrabKey, XNextEvent,
+    XOpenDisplay, XPending, XRootWindow, XSelectInput, XSetErrorHandler, XSync, XUngrabKey,
+    XWarpPointer,
 };
+
+#[cfg(feature = "vision-grids")]
+use x11::xlib::{XAllPlanes, XGetImage, XDestroyImage, ZPixmap};
 
 static X11_ERROR_OCCURRED: AtomicBool = AtomicBool::new(false);
 
@@ -145,6 +149,39 @@ impl X11Client {
 
     pub fn root_window(&self) -> u64 {
         self.root_window
+    }
+
+    #[cfg(feature = "vision-grids")]
+    pub fn take_screenshot(&self) -> Result<Vec<u8>> {
+        unsafe {
+            let image = XGetImage(
+                self.display,
+                self.root_window,
+                0,
+                0,
+                self.screen_info.width,
+                self.screen_info.height,
+                XAllPlanes(),
+                ZPixmap,
+            );
+
+            if image.is_null() {
+                return Err(PointlessError::X11ScreenshotFailed);
+            }
+
+            let image_ref = &*image;
+            let data_len = (image_ref.bytes_per_line * image_ref.height) as usize;
+            let mut screenshot_data = Vec::with_capacity(data_len);
+
+            // Copy image data
+            let src_ptr = image_ref.data as *const u8;
+            for i in 0..data_len {
+                screenshot_data.push(*src_ptr.offset(i as isize));
+            }
+
+            XDestroyImage(image);
+            Ok(screenshot_data)
+        }
     }
 }
 
