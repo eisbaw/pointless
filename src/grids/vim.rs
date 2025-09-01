@@ -144,7 +144,12 @@ impl GridLayout for VimGrid {
 
                     // Create small rectangles around each jump target
                     let rect =
-                        Rectangle::new(target.position.x - 20, target.position.y - 20, 40, 40);
+                        Rectangle::new(
+                            target.position.x - crate::constants::VIM_TARGET_OFFSET as i32,
+                            target.position.y - crate::constants::VIM_TARGET_OFFSET as i32,
+                            crate::constants::VIM_TARGET_SIZE,
+                            crate::constants::VIM_TARGET_SIZE
+                        );
 
                     cells.push(GridCell::new(coord, rect, target.label.to_string()));
                 }
@@ -160,8 +165,8 @@ impl GridLayout for VimGrid {
                 let rect = Rectangle::new(
                     self.current_cursor.x - 10,
                     self.current_cursor.y - 10,
-                    20,
-                    20,
+                    crate::constants::VIM_TARGET_OFFSET,
+                    crate::constants::VIM_TARGET_OFFSET,
                 );
 
                 cells.push(GridCell::new(coord, rect, "●".to_string()));

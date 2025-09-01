@@ -28,13 +28,16 @@ impl GridManager {
         self.current_grid.calculate_grid(screen, density)
     }
 
-    pub fn process_key(&mut self, key: KeyCode, screen: &ScreenInfo, density: u32) -> Option<ScreenCoord> {
-        if let Some(coord) = self.current_grid.process_key_with_screen(
-            key,
-            self.current_level,
-            screen,
-            density,
-        ) {
+    pub fn process_key(
+        &mut self,
+        key: KeyCode,
+        screen: &ScreenInfo,
+        density: u32,
+    ) -> Option<ScreenCoord> {
+        if let Some(coord) =
+            self.current_grid
+                .process_key_with_screen(key, self.current_level, screen, density)
+        {
             // Calculate grid on demand to find the corresponding screen coordinate
             let cells = self.calculate_grid(screen, density);
             for cell in &cells {

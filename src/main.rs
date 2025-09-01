@@ -67,10 +67,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Wait a moment then move to corner
-        std::thread::sleep(std::time::Duration::from_millis(1000));
+        std::thread::sleep(std::time::Duration::from_millis(crate::constants::DEBUG_SLEEP_MS));
 
-        match x11_client.warp_cursor(100, 100) {
-            Ok(()) => debug!("Cursor moved to corner: (100, 100)"),
+        match x11_client.warp_cursor(crate::constants::DEBUG_TEST_X, crate::constants::DEBUG_TEST_Y) {
+            Ok(()) => debug!("Cursor moved to corner: ({}, {})", crate::constants::DEBUG_TEST_X, crate::constants::DEBUG_TEST_Y),
             Err(e) => warn!("Failed to move cursor: {}", e),
         }
     }
@@ -105,10 +105,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let r = running.clone();
 
     std::thread::spawn(move || {
-        let mut signals = Signals::new(&[SIGINT, SIGTERM]).expect("Failed to create signal handler");
-        for _ in signals.forever() {
+        let mut signals =
+            Signals::new(&[SIGINT, SIGTERM]).expect("Failed to create signal handler");
+        if let Some(_) = signals.forever().next() {
             r.store(false, Ordering::Relaxed);
-            break;
         }
     });
 
@@ -137,15 +137,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 debug!("Navigation key pressed: {}", keycode);
 
                 // Process navigation and move cursor
-                if let Some(target_pos) = grid_manager.process_key(keycode, screen_info, config.grid_density) {
-                    match x11_client.warp_cursor(target_pos.x, target_pos.y) {
-                        Ok(()) => {
-                            debug!("Cursor moved to: ({}, {})", target_pos.x, target_pos.y);
-                        }
-                        Err(e) => {
-                            warn!("Failed to move cursor: {}", e);
-                        }
+                if let Some(target_pos) =
+                    grid_manager.process_key(keycode, screen_info, config.grid_density)
+                {
+                    if let Err(e) = x11_client.warp_cursor(target_pos.x, target_pos.y) {
+                        error!("Critical cursor movement failure: {} - target was ({}, {})", e, target_pos.x, target_pos.y);
+                        return Err(Box::new(e));
                     }
+                    debug!("Cursor moved to: ({}, {})", target_pos.x, target_pos.y);
                 } else {
                     debug!("Unknown navigation key: {}", keycode);
                 }

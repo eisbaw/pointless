@@ -27,6 +27,11 @@ impl Renderer {
     }
 
     pub fn create_overlay(&mut self, x11_client: &X11Client, config: &Config) -> Result<()> {
+        // Idempotency guard - avoid creating multiple overlays
+        if self.overlay_window.is_some() {
+            return Ok(());
+        }
+
         let screen_info = x11_client.screen_info();
 
         unsafe {

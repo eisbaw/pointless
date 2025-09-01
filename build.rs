@@ -1,38 +1,27 @@
-use std::process::Command;
+use pkg_config::Config;
 
 fn main() {
-    // Use pkg-config to find X11 libraries - this is the most reliable approach in Nix
-    if let Ok(output) = Command::new("pkg-config")
-        .args(&["--cflags-only-I", "x11"])
-        .output()
-    {
-        if output.status.success() {
-            let includes = String::from_utf8_lossy(&output.stdout);
-            for include in includes.split_whitespace() {
-                if let Some(path) = include.strip_prefix("-I") {
-                    println!("cargo:rustc-link-search=native={}", path.replace("/include", "/lib"));
-                }
-            }
-        }
-    }
+    // Use pkg-config to find X11 libraries - fail fast if not available
+    // The Nix environment provides these via PKG_CONFIG_PATH
+    
+    Config::new()
+        .atleast_version("1.6")
+        .probe("x11")
+        .unwrap_or_else(|e| panic!(
+            "X11 development libraries not found: {}.\nRun: nix develop", e
+        ));
+    
+    Config::new()
+        .probe("xext")
+        .unwrap_or_else(|e| panic!(
+            "Xext development libraries not found: {}.\nRun: nix develop", e
+        ));
+    
+    Config::new()
+        .probe("xi")
+        .unwrap_or_else(|e| panic!(
+            "Xi development libraries not found: {}.\nRun: nix develop", e
+        ));
 
-    if let Ok(output) = Command::new("pkg-config")
-        .args(&["--libs", "x11"])
-        .output()
-    {
-        if output.status.success() {
-            let libs = String::from_utf8_lossy(&output.stdout);
-            for lib in libs.split_whitespace() {
-                if let Some(path) = lib.strip_prefix("-L") {
-                    println!("cargo:rustc-link-search=native={}", path);
-                } else if let Some(lib_name) = lib.strip_prefix("-l") {
-                    println!("cargo:rustc-link-lib={}", lib_name);
-                }
-            }
-        }
-    }
-
-    // Also add common X11 libraries
-    println!("cargo:rustc-link-lib=Xext");
-    println!("cargo:rustc-link-lib=Xi");
+    println!("cargo:rerun-if-changed=build.rs");
 }

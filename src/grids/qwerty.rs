@@ -22,7 +22,6 @@ impl QwertyGrid {
         }
     }
 
-
     fn keycode_to_label(&self, keycode: KeyCode) -> String {
         match keycode {
             KEYCODE_Q => "Q".to_string(),

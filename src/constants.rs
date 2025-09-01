@@ -68,3 +68,15 @@ pub const MAX_CELLS_PER_GRID: usize = 100;
 pub const GRID_BORDER_WIDTH: u32 = 1;
 pub const TEXT_VERTICAL_OFFSET: i32 = 6;
 pub const CHAR_WIDTH_ESTIMATE: usize = 4;
+
+// Default configuration values
+pub const DEFAULT_OPACITY: f32 = 0.8;
+
+// Debug test coordinates
+pub const DEBUG_TEST_X: i32 = 100;
+pub const DEBUG_TEST_Y: i32 = 100;
+pub const DEBUG_SLEEP_MS: u64 = 1000;
+
+// Vim grid targeting constants
+pub const VIM_TARGET_SIZE: u32 = 40;
+pub const VIM_TARGET_OFFSET: u32 = 20;

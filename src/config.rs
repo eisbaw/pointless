@@ -46,7 +46,7 @@ pub struct Config {
     pub color: String,
 
     /// Grid opacity (0.0 to 1.0)
-    #[arg(long, default_value_t = 0.8)]
+    #[arg(long, default_value_t = crate::constants::DEFAULT_OPACITY)]
     pub opacity: f32,
 
     /// Debug mode for additional logging

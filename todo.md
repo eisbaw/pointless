@@ -75,6 +75,8 @@ AI.rule: Keep readme.md updated as tasks are completed.
 - DONE: Fix infinite loop without cleanup in main event loop
 - DONE: Remove hardcoded magic numbers in grid size calculations
 - DONE: Add proper logging instead of println! statements
+- DONE: Fix X11 library linking issues in Nix environment using cargo config
+- DONE: Fix critical clippy error in signal handling (never-loop pattern)
 
 ## Build System
 - DONE: Create Justfile with all build commands
