@@ -136,6 +136,42 @@ impl X11Client {
         self.display
     }
 
+    /// Get the current cursor position
+    ///
+    /// # Errors
+    /// Returns `PointlessError::PointerQueryFailed` if X11 cursor position query fails
+    pub fn get_cursor_position(&self) -> Result<crate::types::ScreenCoord> {
+        use x11::xlib::XQueryPointer;
+
+        unsafe {
+            let mut root_return = 0;
+            let mut child_return = 0;
+            let mut root_x = 0;
+            let mut root_y = 0;
+            let mut win_x = 0;
+            let mut win_y = 0;
+            let mut mask_return = 0;
+
+            let result = XQueryPointer(
+                self.display,
+                self.root_window,
+                &mut root_return,
+                &mut child_return,
+                &mut root_x,
+                &mut root_y,
+                &mut win_x,
+                &mut win_y,
+                &mut mask_return,
+            );
+
+            if result == 0 {
+                Err(PointlessError::PointerQueryFailed)
+            } else {
+                Ok(crate::types::ScreenCoord { x: root_x, y: root_y })
+            }
+        }
+    }
+
     /// Warp the cursor to specified coordinates
     ///
     /// # Errors

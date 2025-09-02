@@ -16,6 +16,9 @@ pub enum PointlessError {
     #[error("Pointer warp failed to position ({x}, {y})")]
     PointerWarpFailed { x: i32, y: i32 },
 
+    #[error("Pointer position query failed")]
+    PointerQueryFailed,
+
     #[error("Window creation failed")]
     WindowCreationFailed,
 

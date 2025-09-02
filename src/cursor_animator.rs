@@ -37,12 +37,8 @@ impl CursorAnimator {
 
     /// Accelerated movement using sigmoid function for smooth acceleration/deceleration
     fn move_accelerate(&self, x11_client: &X11Client, target: ScreenCoord) -> Result<(), Box<dyn std::error::Error>> {
-        // Get current cursor position (approximate from last known position)
-        // For now, we'll use screen center as starting point - could be enhanced to track actual position
-        let start = ScreenCoord { 
-            x: x11_client.screen_info().width as i32 / 2, 
-            y: x11_client.screen_info().height as i32 / 2 
-        };
+        // Get actual current cursor position
+        let start = x11_client.get_cursor_position()?;
 
         let animation_duration = Duration::from_millis(200); // 200ms animation
         let frame_duration = Duration::from_millis(16); // ~60 FPS
