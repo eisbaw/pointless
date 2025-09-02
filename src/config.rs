@@ -44,6 +44,14 @@ pub struct Config {
     /// Debug mode for additional logging
     #[arg(long, default_value_t = false)]
     pub debug: bool,
+
+    /// Path to PNG output file instead of X11 display
+    #[arg(long)]
+    pub png_output: Option<String>,
+
+    /// PNG resolution in WIDTHxHEIGHT format
+    #[arg(long, default_value = "1920x1080")]
+    pub png_resolution: String,
 }
 
 impl Config {
@@ -58,6 +66,46 @@ impl Config {
                 color: self.color.clone(),
             }
         })
+    }
+
+    /// Get color as RGB tuple for PNG rendering
+    ///
+    /// # Errors
+    /// Returns `PointlessError::InvalidColorFormat` if color string is not a valid hex value
+    pub fn color_as_rgb_tuple(&self) -> crate::error::Result<(u8, u8, u8)> {
+        let rgb = self.color_rgb()?;
+        Ok((
+            ((rgb >> 16) & 0xFF) as u8,
+            ((rgb >> 8) & 0xFF) as u8,
+            (rgb & 0xFF) as u8,
+        ))
+    }
+
+    /// Parse PNG resolution string as (width, height)
+    ///
+    /// # Errors
+    /// Returns `PointlessError::InvalidCoordinate` if resolution format is invalid
+    pub fn parse_png_resolution(&self) -> crate::error::Result<(u32, u32)> {
+        let parts: Vec<&str> = self.png_resolution.split('x').collect();
+        if parts.len() != 2 {
+            return Err(crate::error::PointlessError::InvalidCoordinate(
+                format!("Invalid resolution format '{}'. Expected WIDTHxHEIGHT (e.g., 1920x1080)", self.png_resolution)
+            ));
+        }
+
+        let width: u32 = parts[0].parse().map_err(|_| {
+            crate::error::PointlessError::InvalidCoordinate(
+                format!("Invalid width '{}' in resolution '{}'", parts[0], self.png_resolution)
+            )
+        })?;
+
+        let height: u32 = parts[1].parse().map_err(|_| {
+            crate::error::PointlessError::InvalidCoordinate(
+                format!("Invalid height '{}' in resolution '{}'", parts[1], self.png_resolution)
+            )
+        })?;
+
+        Ok((width, height))
     }
 
     /// Validate all configuration parameters

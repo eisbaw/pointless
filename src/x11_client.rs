@@ -187,12 +187,15 @@ impl X11Client {
 
     /// Create an overlay window with specified properties
     /// Returns window ID on success
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::WindowCreationFailed` if X11 window creation fails
     pub fn create_overlay_window(&self, x: i32, y: i32, width: u32, height: u32) -> Result<u64> {
-        use x11::xlib::{XCreateWindow, InputOutput, CWOverrideRedirect, CWBackPixel, CWBorderPixel, XSetWindowAttributes};
-        
+        use x11::xlib::{
+            CWBackPixel, CWBorderPixel, CWOverrideRedirect, InputOutput, XCreateWindow,
+            XSetWindowAttributes,
+        };
+
         unsafe {
             let mut window_attrs: XSetWindowAttributes = std::mem::zeroed();
             window_attrs.override_redirect = 1; // Override window manager
@@ -206,7 +209,7 @@ impl X11Client {
                 y,
                 width,
                 height,
-                0, // border_width
+                0,  // border_width
                 24, // depth - 24-bit color
                 InputOutput as u32,
                 ptr::null_mut(), // visual
@@ -223,12 +226,12 @@ impl X11Client {
     }
 
     /// Map (show) a window
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::X11OperationFailed` if mapping fails
     pub fn map_window(&self, window: u64) -> Result<()> {
-        use x11::xlib::{XMapWindow, XFlush};
-        
+        use x11::xlib::{XFlush, XMapWindow};
+
         unsafe {
             XMapWindow(self.display, window);
             XFlush(self.display);
@@ -237,12 +240,12 @@ impl X11Client {
     }
 
     /// Unmap (hide) a window
-    /// 
+    ///
     /// # Errors  
     /// Returns `PointlessError::X11OperationFailed` if unmapping fails
     pub fn unmap_window(&self, window: u64) -> Result<()> {
-        use x11::xlib::{XUnmapWindow, XFlush};
-        
+        use x11::xlib::{XFlush, XUnmapWindow};
+
         unsafe {
             XUnmapWindow(self.display, window);
             XFlush(self.display);
@@ -253,19 +256,19 @@ impl X11Client {
     /// Destroy a window and release its resources
     pub fn destroy_window(&self, window: u64) {
         use x11::xlib::XDestroyWindow;
-        
+
         unsafe {
             XDestroyWindow(self.display, window);
         }
     }
 
     /// Create a graphics context for drawing operations
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::GraphicsContextFailed` if GC creation fails
     pub fn create_graphics_context(&self, window: u64) -> Result<*mut x11::xlib::_XGC> {
         use x11::xlib::XCreateGC;
-        
+
         unsafe {
             let gc = XCreateGC(self.display, window, 0, ptr::null_mut());
             if gc.is_null() {
@@ -277,28 +280,36 @@ impl X11Client {
     }
 
     /// Set foreground color for drawing operations
-    pub fn set_foreground_color(&self, gc: *mut x11::xlib::_XGC, color: u64) {
+    pub unsafe fn set_foreground_color(&self, gc: *mut x11::xlib::_XGC, color: u64) {
         use x11::xlib::XSetForeground;
-        
+
         unsafe {
             XSetForeground(self.display, gc, color);
         }
     }
 
     /// Draw a rectangle outline
-    pub fn draw_rectangle(&self, window: u64, gc: *mut x11::xlib::_XGC, x: i32, y: i32, width: u32, height: u32) {
+    pub unsafe fn draw_rectangle(
+        &self,
+        window: u64,
+        gc: *mut x11::xlib::_XGC,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+    ) {
         use x11::xlib::XDrawRectangle;
-        
+
         unsafe {
             XDrawRectangle(self.display, window, gc, x, y, width, height);
         }
     }
 
     /// Draw text at specified position
-    pub fn draw_text(&self, window: u64, gc: *mut x11::xlib::_XGC, x: i32, y: i32, text: &str) {
-        use x11::xlib::XDrawString;
+    pub unsafe fn draw_text(&self, window: u64, gc: *mut x11::xlib::_XGC, x: i32, y: i32, text: &str) {
         use std::ffi::CString;
-        
+        use x11::xlib::XDrawString;
+
         unsafe {
             if let Ok(c_text) = CString::new(text) {
                 XDrawString(
@@ -317,7 +328,7 @@ impl X11Client {
     /// Clear a window's contents
     pub fn clear_window(&self, window: u64) {
         use x11::xlib::XClearWindow;
-        
+
         unsafe {
             XClearWindow(self.display, window);
         }
@@ -326,7 +337,7 @@ impl X11Client {
     /// Flush pending X11 requests to ensure they're processed
     pub fn flush(&self) {
         use x11::xlib::XFlush;
-        
+
         unsafe {
             XFlush(self.display);
         }
@@ -334,16 +345,18 @@ impl X11Client {
 
     /// Convert X11 keysym to keycode at runtime
     /// This provides safer keycode resolution than hardcoded constants
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::InvalidKeycode` if the keysym cannot be mapped to a keycode
     pub fn keysym_to_keycode(&self, keysym: u64) -> Result<u32> {
         use x11::xlib::XKeysymToKeycode;
-        
+
         unsafe {
             let keycode = XKeysymToKeycode(self.display, keysym);
             if keycode == 0 {
-                return Err(PointlessError::InvalidKeycode { keycode: keycode as u32 });
+                return Err(PointlessError::InvalidKeycode {
+                    keycode: keycode as u32,
+                });
             }
             Ok(keycode as u32)
         }
@@ -351,17 +364,17 @@ impl X11Client {
 
     /// Validate that hardcoded keycodes match runtime X11 configuration
     /// This ensures the application works correctly on different X11 setups
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::InvalidKeycode` if any keycode validation fails
     pub fn validate_keycodes(&self) -> Result<()> {
-        use x11::keysym::*;
         use crate::constants::*;
+        use x11::keysym::*;
 
         // Define expected keysym-to-keycode mappings
         let expected_mappings = vec![
             (XK_a, KEYCODE_A, "A"),
-            (XK_b, KEYCODE_B, "B"), 
+            (XK_b, KEYCODE_B, "B"),
             (XK_c, KEYCODE_C, "C"),
             (XK_d, KEYCODE_D, "D"),
             (XK_e, KEYCODE_E, "E"),
@@ -390,7 +403,9 @@ impl X11Client {
             if actual_keycode != expected_keycode {
                 log::warn!(
                     "Keycode mismatch for {}: expected {}, got {}. This may cause input issues.",
-                    key_name, expected_keycode, actual_keycode
+                    key_name,
+                    expected_keycode,
+                    actual_keycode
                 );
                 // Don't fail validation - just warn, as keycodes can vary legitimately
             }

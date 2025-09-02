@@ -8,6 +8,7 @@ mod error;
 mod grid_manager;
 mod grids;
 mod input_handler;
+mod png_renderer;
 mod renderer;
 mod types;
 mod x11_client;
@@ -17,6 +18,7 @@ use config::Config;
 use grid_manager::GridManager;
 use input_handler::{InputEvent, InputHandler};
 use log::{debug, error, info, warn};
+use png_renderer::PngRenderer;
 use renderer::Renderer;
 use signal_hook::{consts::SIGINT, consts::SIGTERM, iterator::Signals};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -37,7 +39,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::parse();
 
     initialize_logging(&config);
-    initialize_and_run_application(config)
+
+    // Check if PNG output mode is requested
+    if let Some(png_path) = config.png_output.clone() {
+        render_to_png(config, &png_path)
+    } else {
+        initialize_and_run_application(config)
+    }
+}
+
+/// Render grid to PNG file instead of X11 display
+fn render_to_png(config: Config, png_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // Validate configuration early - fail fast on invalid parameters
+    if let Err(e) = config.validate() {
+        error!("Configuration validation failed: {}", e);
+        return Err(Box::new(e));
+    }
+
+    // Parse PNG resolution from configuration
+    let (width, height) = config.parse_png_resolution()?;
+    let screen_info = ScreenInfo {
+        width,
+        height,
+        root_window: 0, // Not used in PNG mode
+    };
+
+    info!("PNG rendering mode enabled");
+    info!("Output file: {}", png_path);
+    info!("Grid type: {:?}", config.grid_type);
+    info!("Screen resolution: {}x{}", screen_info.width, screen_info.height);
+
+    // Initialize grid manager and generate grid
+    let grid_manager = GridManager::new(config.grid_type.clone());
+    let cells = grid_manager.calculate_grid(&screen_info, config.grid_density);
+
+    info!("Generated {} grid cells", cells.len());
+
+    // Create PNG renderer and render to file
+    let png_renderer = PngRenderer::new();
+    png_renderer.render_grid_to_png(&cells, &screen_info, &config, png_path)?;
+
+    info!("Grid successfully rendered to PNG: {}", png_path);
+    Ok(())
 }
 
 /// Initialize logging based on configuration

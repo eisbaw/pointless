@@ -39,6 +39,9 @@ pub enum PointlessError {
 
     #[error("Invalid coordinate: {0}")]
     InvalidCoordinate(String),
+
+    #[error("Rendering failed: {0}")]
+    RenderingFailed(String),
 }
 
 pub type Result<T> = std::result::Result<T, PointlessError>;

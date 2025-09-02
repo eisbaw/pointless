@@ -6,9 +6,9 @@ AI.rule: Keep readme.md updated as tasks are completed.
 
 ## Adhoc tasks:
 
-Add argument to render the grid directly to PNG, instead of on the X11 Screen. Then, as an AI, you shall read in the PNGs to confirm the rendering layout.
+- DONE: Add argument to render the grid directly to PNG, instead of on the X11 Screen. Then, as an AI, you shall read in the PNGs to confirm the rendering layout.
 
-Make sure the above PNG rendering, and grid adheres to spec.
+- DONE: Make sure the above PNG rendering, and grid adheres to spec.
 
 
 ## Phase 1: Core Infrastructure
