@@ -40,12 +40,17 @@ impl GridManager {
             .current_grid
             .process_key(key, self.current_level, screen, density)
         {
+            log::debug!("Grid returned coordinate: ({}, {}) for keycode {}", coord.x, coord.y, key);
+            
             // Use efficient coordinate transformation without full grid recalculation
-            return Some(
-                self.current_grid
-                    .grid_to_screen_coord(coord, screen, density),
-            );
+            let screen_coord = self.current_grid.grid_to_screen_coord(coord, screen, density);
+            
+            log::debug!("Final screen coordinate: ({}, {}) for grid coordinate ({}, {})", 
+                       screen_coord.x, screen_coord.y, coord.x, coord.y);
+            
+            return Some(screen_coord);
         }
+        log::debug!("No grid coordinate returned for keycode {}", key);
         None
     }
 

@@ -12,7 +12,7 @@ pub struct CoordinateResolver;
 impl CoordinateResolver {
     /// Convert grid coordinate to screen coordinate for homogeneous grids
     #[must_use]
-    pub const fn grid_to_screen_homogeneous(
+    pub fn grid_to_screen_homogeneous(
         coord: GridCoord,
         screen: &ScreenInfo,
         density: u32,
@@ -25,6 +25,9 @@ impl CoordinateResolver {
 
         let x = (coord.x * cell_width + cell_width / 2) as i32;
         let y = (coord.y * cell_height + cell_height / 2) as i32;
+
+        log::debug!("Coordinate conversion: grid({}, {}) -> screen({}, {}) [screen={}x{}, density={}, cell={}x{}]", 
+                   coord.x, coord.y, x, y, screen.width, screen.height, density, cell_width, cell_height);
 
         ScreenCoord { x, y }
     }
