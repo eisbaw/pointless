@@ -5,9 +5,10 @@
 build:
     cargo build --release
 
-# Build with vision grids feature
+# Build with vision grids feature (DEPRECATED - vision grids removed)
 build-vision:
-    cargo build --release --features vision-grids
+    @echo "Vision grids feature has been removed from this project"
+    @echo "Use 'just build' for the standard build"
 
 # Run the application
 run *args:
@@ -17,17 +18,19 @@ run *args:
 test-unit:
     cargo test --lib
 
-# Run unit tests with vision grids
+# Run unit tests with vision grids (DEPRECATED - vision grids removed)
 test-unit-vision:
-    cargo test --lib --features vision-grids
+    @echo "Vision grids feature has been removed from this project"
+    @echo "Use 'just test-unit' for the standard unit tests"
 
 # Run integration tests with Xephyr (basic grids only)
 test-integration:
     ./scripts/xephyr_test.sh
 
-# Run integration tests with vision grids
+# Run integration tests with vision grids (DEPRECATED - vision grids removed)
 test-integration-vision:
-    ENABLE_VISION=true ./scripts/xephyr_test.sh
+    @echo "Vision grids feature has been removed from this project"
+    @echo "Use 'just test-integration' for the standard integration tests"
 
 # Run visual validation tests
 test-visual:

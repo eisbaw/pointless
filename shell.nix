@@ -25,18 +25,11 @@ pkgs.mkShell {
     xorg.xev         # For event testing
     xorg.xprop       # For window properties
     imagemagick      # For screenshot comparison
-    
-    # OpenCV and dependencies for vision grids feature
-    opencv4
-    clang
-    llvm
-    libclang
   ];
 
   # AI.rule: Only add functional commands, not noisy echos
   shellHook = ''
-    export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
-    export LLVM_CONFIG_PATH="${pkgs.llvm}/bin/llvm-config"
+    # No additional environment setup needed
   '';
 
   # Set environment variables for X11 development

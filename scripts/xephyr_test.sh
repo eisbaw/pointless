@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 XEPHYR_DISPLAY=":99"
 XEPHYR_PID=""
-TEST_TIMEOUT=30
+TEST_TIMEOUT=10
 
 # Colors for output
 RED='\033[0;31m'
@@ -103,13 +103,26 @@ run_pointless_test() {
     
     # Check if process is still running (basic health check)
     if kill -0 "$pointless_pid" 2>/dev/null; then
-        log_info "Process running successfully for $grid_type grid"
+        log_info "Process initialized successfully for $grid_type grid"
         
         # Test X11 display connection by checking window properties
         if xwininfo -display "$XEPHYR_DISPLAY" -root >/dev/null 2>&1; then
             log_info "X11 display connection verified"
         else
             log_warn "X11 display connection issue detected"
+        fi
+        
+        # Check for successful initialization in logs
+        if [[ -f "$log_file" ]] && grep -q "Pointless X11 cursor utility initialized" "$log_file"; then
+            log_info "Application initialized correctly - checking for startup errors"
+            
+            # Check for critical errors during startup
+            if grep -qi "panic\|fatal\|abort" "$log_file"; then
+                log_error "Critical errors found during startup"
+                return 1
+            else
+                log_info "No critical startup errors detected"
+            fi
         fi
     else
         log_error "Process died unexpectedly for $grid_type grid"
@@ -124,15 +137,15 @@ run_pointless_test() {
     kill "$pointless_pid" 2>/dev/null || true
     wait "$pointless_pid" 2>/dev/null || true
     
-    # Check for errors in the log
+    # Final check for errors in the log
     if [[ -f "$log_file" ]]; then
-        if grep -qi "error\|panic\|failed" "$log_file"; then
-            log_warn "Errors detected in log for $grid_type:"
-            grep -i "error\|panic\|failed" "$log_file" | head -5
+        if grep -qi "panic\|fatal\|abort" "$log_file"; then
+            log_warn "Critical errors detected in log for $grid_type:"
+            grep -i "panic\|fatal\|abort" "$log_file" | head -5
         else
-            log_info "No critical errors found for $grid_type"
+            log_info "Application ran successfully for $grid_type grid"
         fi
-        rm -f "$log_file"
+        # Keep log file for inspection if needed
     fi
     
     log_info "Test completed for $grid_type grid"
@@ -166,26 +179,8 @@ test_basic_grids() {
 }
 
 test_vision_grids() {
-    log_info "Testing vision grid types (if available)..."
-    
-    # Build with vision grids feature
-    cd "$PROJECT_ROOT"
-    if cargo build --release --features vision-grids 2>/dev/null; then
-        log_info "Vision grids feature available, testing..."
-        
-        # Test vision grid types (these are stub implementations)
-        local vision_types=("hough-lines" "rectangle-fitting" "edge-density" "color-clustering" "feature-detection")
-        
-        for vision_type in "${vision_types[@]}"; do
-            run_pointless_test "$vision_type" "super" "--opacity 0.8" || {
-                log_warn "Test failed for $vision_type vision grid, continuing..."
-            }
-        done
-    else
-        log_info "Vision grids feature not available (missing OpenCV dependencies)"
-        # Rebuild basic version for consistency
-        cargo build --release >/dev/null 2>&1
-    fi
+    log_info "Vision grids feature has been removed from this project"
+    log_info "Skipping vision grid tests - only basic grids are supported"
 }
 
 test_configurations() {
