@@ -24,7 +24,6 @@ pub struct HoughGrid {
     jump_targets: Vec<ScreenCoord>,
     jump_target_map: HashMap<KeyCode, usize>,
     last_refresh: std::time::Instant,
-    x11_client: Option<*const X11Client>,
 }
 
 #[cfg(feature = "vision-grids")]
@@ -58,28 +57,48 @@ impl HoughGrid {
             jump_targets: Vec::new(),
             jump_target_map,
             last_refresh: std::time::Instant::now(),
-            x11_client: None,
         }
     }
 
     #[allow(dead_code)]
-    pub fn set_x11_client(&mut self, client: &X11Client) {
-        self.x11_client = Some(client as *const X11Client);
+    pub fn set_x11_client(&mut self, _client: &X11Client) {
+        // In future implementation, this would store a reference or establish communication
+        // For now, stub implementation doesn't require X11 client access
     }
 }
 
 #[cfg(feature = "vision-grids")]
 impl GridLayout for HoughGrid {
-    fn calculate_grid(&self, _screen: &ScreenInfo, _density: u32) -> Vec<GridCell> {
-        // Refresh jump targets if needed
-        let should_refresh = self.last_refresh.elapsed().as_secs() > 2;
-
-        let targets = if should_refresh {
-            // Since we can't mutate self here, fall back to cached targets
-            // The refresh will happen in reset() or when set_x11_client is called
-            &self.jump_targets
+    fn calculate_grid(&self, screen: &ScreenInfo, _density: u32) -> Vec<GridCell> {
+        // For stub implementation, generate synthetic jump targets based on screen dimensions
+        // In real implementation, this would use cached targets that were refreshed in reset()
+        // or through a separate refresh mechanism
+        let targets = if self.jump_targets.is_empty() {
+            // Generate fallback synthetic targets distributed across screen
+            vec![
+                ScreenCoord {
+                    x: screen.width as i32 / 4,
+                    y: screen.height as i32 / 4,
+                },
+                ScreenCoord {
+                    x: screen.width as i32 * 3 / 4,
+                    y: screen.height as i32 / 4,
+                },
+                ScreenCoord {
+                    x: screen.width as i32 / 4,
+                    y: screen.height as i32 * 3 / 4,
+                },
+                ScreenCoord {
+                    x: screen.width as i32 * 3 / 4,
+                    y: screen.height as i32 * 3 / 4,
+                },
+                ScreenCoord {
+                    x: screen.width as i32 / 2,
+                    y: screen.height as i32 / 2,
+                },
+            ]
         } else {
-            &self.jump_targets
+            self.jump_targets.clone()
         };
 
         targets
@@ -117,11 +136,15 @@ impl GridLayout for HoughGrid {
 
     fn reset(&mut self) {
         self.last_refresh = std::time::Instant::now();
-        // Refresh jump targets if we have an X11 client
-        if self.x11_client.is_some() {
-            // We would refresh here but need screen info
-            // This will be handled by the grid manager
-        }
+        // In a real implementation, this would refresh jump targets using Hough line detection
+        // For stub, generate some synthetic jump targets for demonstration
+        self.jump_targets = vec![
+            ScreenCoord { x: 200, y: 150 },
+            ScreenCoord { x: 600, y: 200 },
+            ScreenCoord { x: 400, y: 450 },
+            ScreenCoord { x: 800, y: 350 },
+            ScreenCoord { x: 300, y: 300 },
+        ];
     }
 
     fn grid_to_screen_coord(

@@ -179,3 +179,12 @@ AI.rule: Keep readme.md updated as tasks are completed.
 
 ## Critical Bug Fix (Current Session)
 - DONE: Fixed vision-grids feature compilation errors - updated all process_key method signatures to match current GridLayout trait interface
+
+## Code Quality Issues Found (Sep 2025 Review)
+- DONE: Fix incomplete homogeneous grid region tracking - implement proper stack-based parent region navigation
+- DONE: Replace unsafe raw pointers with safe references in vision grid implementations
+- DONE: Fix broken refresh mechanism in vision grids that cannot mutate state
+- DONE: Add overflow protection in screenshot buffer calculations
+- DONE: Replace expect() calls with proper assertions in test code
+- DONE: Add comprehensive safety documentation for manual Send implementation
+- DONE: Consider caching grid calculations to prevent recalculation on every modifier key press

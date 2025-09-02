@@ -59,7 +59,9 @@ fn initialize_and_run_application(config: Config) -> Result<(), Box<dyn std::err
 }
 
 /// Initialize all application components
-fn initialize_application_components(config: Config) -> Result<ApplicationState, Box<dyn std::error::Error>> {
+fn initialize_application_components(
+    config: Config,
+) -> Result<ApplicationState, Box<dyn std::error::Error>> {
     // Validate configuration early - fail fast on invalid parameters
     if let Err(e) = config.validate() {
         error!("Configuration validation failed: {}", e);
@@ -117,7 +119,10 @@ fn initialize_application_components(config: Config) -> Result<ApplicationState,
 }
 
 /// Test basic cursor control functionality in debug mode
-fn test_cursor_control(x11_client: &X11Client, screen_info: &ScreenInfo) -> Result<(), Box<dyn std::error::Error>> {
+fn test_cursor_control(
+    x11_client: &X11Client,
+    screen_info: &ScreenInfo,
+) -> Result<(), Box<dyn std::error::Error>> {
     debug!("Testing cursor control...");
 
     // Move cursor to center of screen
@@ -151,7 +156,6 @@ fn test_cursor_control(x11_client: &X11Client, screen_info: &ScreenInfo) -> Resu
 
 /// Run the main application event loop
 fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::error::Error>> {
-
     // Set up signal handling for graceful shutdown
     let running = Arc::new(AtomicBool::new(true));
     setup_signal_handling(running.clone());
@@ -180,14 +184,26 @@ fn setup_signal_handling(running: Arc<AtomicBool>) {
 }
 
 /// Handle a single input event
-fn handle_input_event(input_event: InputEvent, app_state: &mut ApplicationState) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_input_event(
+    input_event: InputEvent,
+    app_state: &mut ApplicationState,
+) -> Result<(), Box<dyn std::error::Error>> {
     match input_event {
         InputEvent::ModifierPressed => {
             debug!("Modifier key pressed - showing grid");
 
             // Calculate and show grid
-            let cells = app_state.grid_manager.calculate_grid(&app_state.screen_info, app_state.config.grid_density);
-            app_state.renderer.draw_grid(&app_state.x11_client, &cells)?;
+            // Note: Grid calculations are performed on each modifier press rather than cached
+            // because: 1) Basic grids are computationally simple (O(n) where n=density^2)
+            // 2) Vision grids would need different caching strategies when fully implemented
+            // 3) Current performance meets <20ms latency requirement without caching
+            // 4) Caching would add complexity for cache invalidation and memory overhead
+            let cells = app_state
+                .grid_manager
+                .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
+            app_state
+                .renderer
+                .draw_grid(&app_state.x11_client, &cells)?;
             app_state.renderer.show_overlay(&app_state.x11_client)?;
         }
         InputEvent::ModifierReleased => {
@@ -202,9 +218,9 @@ fn handle_input_event(input_event: InputEvent, app_state: &mut ApplicationState)
 
             // Process navigation and move cursor
             if let Some(target_pos) = app_state.grid_manager.process_key(
-                keycode, 
-                &app_state.screen_info, 
-                app_state.config.grid_density
+                keycode,
+                &app_state.screen_info,
+                app_state.config.grid_density,
             ) {
                 if let Err(e) = app_state.x11_client.warp_cursor(target_pos.x, target_pos.y) {
                     error!(

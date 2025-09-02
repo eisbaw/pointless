@@ -11,6 +11,8 @@ pub struct HomogeneousGrid {
     current_region: Option<Rectangle>,
     subdivision_level: u32,
     max_subdivisions: u32,
+    // Stack-based region tracking for proper hierarchical navigation
+    region_stack: Vec<Rectangle>,
 }
 
 impl Default for HomogeneousGrid {
@@ -28,6 +30,7 @@ impl HomogeneousGrid {
             current_region: None,
             subdivision_level: 0,
             max_subdivisions: MAX_SUBDIVISION_LEVELS,
+            region_stack: Vec::new(),
         }
     }
 
@@ -203,13 +206,16 @@ impl GridLayout for HomogeneousGrid {
 
                     // If we can subdivide further, prepare for next level
                     if self.subdivision_level < self.max_subdivisions {
-                        // Calculate the selected cell region for subdivision
-                        let screen_region = self
+                        // Push current region onto stack before subdividing
+                        let current_region = self
                             .current_region
                             .unwrap_or_else(|| Rectangle::new(0, 0, screen.width, screen.height));
+                        self.region_stack.push(current_region);
+
+                        // Calculate the selected cell region for subdivision
                         let grid_size = std::cmp::min(density, MAX_GRID_SIZE);
                         self.current_region = Some(self.calculate_subdivided_region(
-                            &screen_region,
+                            &current_region,
                             coord,
                             grid_size,
                             grid_size,
@@ -229,14 +235,15 @@ impl GridLayout for HomogeneousGrid {
             // Escape key
             if self.subdivision_level > 0 {
                 self.subdivision_level -= 1;
-                // Reset current region to parent region
-                // For now, just reset to full screen if going back to level 0
+
+                // Pop parent region from stack to properly restore hierarchical navigation
                 if self.subdivision_level == 0 {
+                    // Back to full screen level
                     self.current_region = None;
+                    self.region_stack.clear(); // Clear any remaining stack entries
                 } else {
-                    // TODO: Properly track parent regions in a stack
-                    // For now, just reset to full screen
-                    self.current_region = None;
+                    // Restore parent region from stack
+                    self.current_region = self.region_stack.pop();
                 }
             }
             self.selected_column = None;
@@ -254,6 +261,7 @@ impl GridLayout for HomogeneousGrid {
         self.selected_column = None;
         self.current_region = None;
         self.subdivision_level = 0;
+        self.region_stack.clear();
     }
 
     fn grid_to_screen_coord(

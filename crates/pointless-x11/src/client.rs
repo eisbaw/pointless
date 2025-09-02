@@ -28,6 +28,18 @@ pub struct X11Client {
     screen_info: ScreenInfo,
 }
 
+// SAFETY: X11Client can be safely sent between threads because:
+// 1. The X11 Display pointer (*mut Display) is only accessed through XLib functions
+// 2. XLib functions are thread-safe when each thread has its own Display connection
+// 3. This X11Client owns its Display connection exclusively - no sharing between instances
+// 4. The XLib documentation states that Display connections can be used from different
+//    threads as long as they are not used concurrently (which Rust's Send ensures)
+// 5. When X11Client is moved to another thread, all subsequent X11 operations will
+//    occur on that thread, maintaining XLib's threading requirements
+// 6. The Drop implementation properly closes the Display connection on the owning thread
+//
+// IMPORTANT: This assumes that X11Client instances are not used concurrently from
+// multiple threads. For concurrent access, use Arc<Mutex<X11Client>> instead.
 unsafe impl Send for X11Client {}
 
 impl X11Client {
@@ -210,8 +222,14 @@ impl X11Client {
 
             // Convert XImage to RGB data
             let bytes_per_pixel = 4; // Assuming RGBA
-            let total_bytes =
-                (self.screen_info.width * self.screen_info.height * bytes_per_pixel) as usize;
+                                     // Use checked arithmetic to prevent overflow on very large screens
+            let total_bytes = self
+                .screen_info
+                .width
+                .checked_mul(self.screen_info.height)
+                .and_then(|size| size.checked_mul(bytes_per_pixel))
+                .map(|size| size as usize)
+                .ok_or(X11Error::ScreenshotCaptureFailed)?;
             let mut rgb_data = Vec::with_capacity(total_bytes);
 
             let data_ptr = (*image).data as *const u8;

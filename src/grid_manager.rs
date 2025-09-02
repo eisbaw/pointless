@@ -46,7 +46,9 @@ impl GridManager {
         screen: &ScreenInfo,
         density: u32,
     ) -> Option<ScreenCoord> {
-        if let Some(coord) = self.current_grid.process_key(key, self.current_level, screen, density)
+        if let Some(coord) = self
+            .current_grid
+            .process_key(key, self.current_level, screen, density)
         {
             // Use efficient coordinate transformation without full grid recalculation
             return Some(

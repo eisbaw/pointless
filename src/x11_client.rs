@@ -206,9 +206,16 @@ impl X11Client {
             let data_len = (image_ref.bytes_per_line * image_ref.height) as usize;
 
             // Validate data length to prevent buffer overruns
-            if data_len == 0
-                || data_len > (self.screen_info.width * self.screen_info.height * 4) as usize
-            {
+            // Use checked arithmetic to prevent overflow on very large screens
+            let max_expected_size = self
+                .screen_info
+                .width
+                .checked_mul(self.screen_info.height)
+                .and_then(|size| size.checked_mul(4))
+                .map(|size| size as usize)
+                .unwrap_or(usize::MAX);
+
+            if data_len == 0 || data_len > max_expected_size {
                 XDestroyImage(image);
                 return Err(PointlessError::X11ScreenshotFailed);
             }
