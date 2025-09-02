@@ -4,7 +4,12 @@ AI.rule: Keep architecture_design.md updated as tasks are completed.
 AI.rule: Keep readme.md updated as tasks are completed.
 
 
-## 
+## Adhoc tasks:
+
+Add argument to render the grid directly to PNG, instead of on the X11 Screen. Then, as an AI, you shall read in the PNGs to confirm the rendering layout.
+
+Make sure the above PNG rendering, and grid adheres to spec.
+
 
 ## Phase 1: Core Infrastructure
 - DONE: Set up Cargo project with shell.nix environment
