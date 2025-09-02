@@ -151,6 +151,8 @@ mod end_to_end_tests {
                                 );
                             }
                         }
+                        // Clean up overlay to prevent X11 resource leak
+                        renderer.destroy_overlay(&x11_client);
                     }
                     Err(e) => {
                         // Overlay creation might fail in test environments

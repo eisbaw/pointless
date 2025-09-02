@@ -5,6 +5,7 @@ edition = "2021"
 description = "A keyboard-driven X11 cursor utility that makes pointing devices pointless"
 license = "MIT"
 repository = "https://github.com/user/pointless"
+readme = "README.md"
 keywords = ["x11", "cursor", "keyboard", "navigation", "accessibility"]
 categories = ["accessibility", "command-line-utilities", "gui"]
 authors = ["Pointless Team"]
