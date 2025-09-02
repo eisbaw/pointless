@@ -31,14 +31,16 @@ impl HomogeneousGrid {
         }
     }
 
-    fn coord_to_label(&self, coord: GridCoord, buffer: &mut String) {
-        // A-Z coordinate system: A1, A2, ..., A4, B1, B2, ..., D4
-        // Reuse buffer to avoid allocations
-        buffer.clear();
+    /// Create label string directly with pre-allocated capacity to avoid buffer operations
+    fn create_label(&self, coord: GridCoord) -> String {
         let col_char = (b'A' + (coord.x % 26) as u8) as char;
         let row_num = coord.y + 1;
-        buffer.push(col_char);
-        buffer.push_str(&row_num.to_string());
+        // Pre-allocate with expected capacity (1 char + up to 2 digits)
+        let mut label = String::with_capacity(3);
+        label.push(col_char);
+        use std::fmt::Write;
+        write!(label, "{}", row_num).expect("Writing to String cannot fail");
+        label
     }
 
     fn keycode_to_letter(&self, keycode: KeyCode) -> Option<char> {
@@ -131,7 +133,6 @@ impl HomogeneousGrid {
 impl GridLayout for HomogeneousGrid {
     fn calculate_grid(&self, screen: &ScreenInfo, density: u32) -> Vec<GridCell> {
         let mut cells = Vec::new();
-        let mut label_buffer = String::with_capacity(4); // Pre-allocate for performance
 
         // Determine the region to subdivide - either full screen or current subdivision
         let region = self
@@ -162,9 +163,8 @@ impl GridLayout for HomogeneousGrid {
                     cell_height,
                 );
 
-                // Reuse buffer for label generation
-                self.coord_to_label(coord, &mut label_buffer);
-                let label = label_buffer.clone();
+                // Generate label efficiently with pre-allocated capacity
+                let label = self.create_label(coord);
 
                 cells.push(GridCell::new(coord, rect, label));
             }
@@ -173,12 +173,7 @@ impl GridLayout for HomogeneousGrid {
         cells
     }
 
-    fn process_key(&mut self, _key: KeyCode, _current_level: u32) -> Option<GridCoord> {
-        // Fallback implementation - shouldn't be called directly
-        None
-    }
-
-    fn process_key_with_screen(
+    fn process_key(
         &mut self,
         key: KeyCode,
         _current_level: u32,

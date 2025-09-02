@@ -18,12 +18,27 @@ use renderer::Renderer;
 use signal_hook::{consts::SIGINT, consts::SIGTERM, iterator::Signals};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use x11_client::X11Client;
+use x11_client::{ScreenInfo, X11Client};
+
+/// Application state holding all initialized components
+struct ApplicationState {
+    config: Config,
+    x11_client: X11Client,
+    input_handler: InputHandler,
+    renderer: Renderer,
+    grid_manager: GridManager,
+    screen_info: ScreenInfo,
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::parse();
 
-    // Initialize logger based on debug flag
+    initialize_logging(&config);
+    initialize_and_run_application(config)
+}
+
+/// Initialize logging based on configuration
+fn initialize_logging(config: &Config) {
     if config.debug {
         env_logger::Builder::from_default_env()
             .filter_level(log::LevelFilter::Debug)
@@ -35,7 +50,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .filter_level(log::LevelFilter::Info)
             .init();
     }
+}
 
+/// Initialize and run the complete application
+fn initialize_and_run_application(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    let app_state = initialize_application_components(config)?;
+    run_event_loop(app_state)
+}
+
+/// Initialize all application components
+fn initialize_application_components(config: Config) -> Result<ApplicationState, Box<dyn std::error::Error>> {
     // Validate configuration early - fail fast on invalid parameters
     if let Err(e) = config.validate() {
         error!("Configuration validation failed: {}", e);
@@ -44,7 +68,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize X11 connection
     let x11_client = X11Client::new()?;
-    let screen_info = x11_client.screen_info();
+    let screen_info = *x11_client.screen_info(); // Copy the value
 
     debug!("Connected to X11 display");
     debug!("Screen info: {:#?}", screen_info);
@@ -56,45 +80,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test basic cursor control in debug mode
     if config.debug {
-        debug!("Testing cursor control...");
-
-        // Move cursor to center of screen
-        let center_x = screen_info.width as i32 / 2;
-        let center_y = screen_info.height as i32 / 2;
-
-        match x11_client.warp_cursor(center_x, center_y) {
-            Ok(()) => debug!("Cursor moved to center: ({}, {})", center_x, center_y),
-            Err(e) => warn!("Failed to move cursor: {}", e),
-        }
-
-        // Wait a moment then move to corner
-        std::thread::sleep(std::time::Duration::from_millis(
-            crate::constants::DEBUG_SLEEP_MS,
-        ));
-
-        match x11_client.warp_cursor(
-            crate::constants::DEBUG_TEST_X,
-            crate::constants::DEBUG_TEST_Y,
-        ) {
-            Ok(()) => debug!(
-                "Cursor moved to corner: ({}, {})",
-                crate::constants::DEBUG_TEST_X,
-                crate::constants::DEBUG_TEST_Y
-            ),
-            Err(e) => warn!("Failed to move cursor: {}", e),
-        }
+        test_cursor_control(&x11_client, &screen_info)?;
     }
 
-    // Initialize input handler
+    // Initialize components
     let mut input_handler = InputHandler::new(config.modifier_key.clone(), &x11_client)?;
     input_handler.start_capture(&x11_client)?;
 
-    // Initialize renderer
     let mut renderer = Renderer::new();
     renderer.create_overlay(&x11_client, &config)?;
 
-    // Initialize grid manager
-    let mut grid_manager = GridManager::new(config.grid_type.clone());
+    let grid_manager = GridManager::new(config.grid_type.clone());
 
     debug!(
         "Input handler initialized for modifier key: {:?}",
@@ -110,67 +106,128 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     );
 
+    Ok(ApplicationState {
+        config,
+        x11_client,
+        input_handler,
+        renderer,
+        grid_manager,
+        screen_info,
+    })
+}
+
+/// Test basic cursor control functionality in debug mode
+fn test_cursor_control(x11_client: &X11Client, screen_info: &ScreenInfo) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("Testing cursor control...");
+
+    // Move cursor to center of screen
+    let center_x = screen_info.width as i32 / 2;
+    let center_y = screen_info.height as i32 / 2;
+
+    match x11_client.warp_cursor(center_x, center_y) {
+        Ok(()) => debug!("Cursor moved to center: ({}, {})", center_x, center_y),
+        Err(e) => warn!("Failed to move cursor: {}", e),
+    }
+
+    // Wait a moment then move to corner
+    std::thread::sleep(std::time::Duration::from_millis(
+        crate::constants::DEBUG_SLEEP_MS,
+    ));
+
+    match x11_client.warp_cursor(
+        crate::constants::DEBUG_TEST_X,
+        crate::constants::DEBUG_TEST_Y,
+    ) {
+        Ok(()) => debug!(
+            "Cursor moved to corner: ({}, {})",
+            crate::constants::DEBUG_TEST_X,
+            crate::constants::DEBUG_TEST_Y
+        ),
+        Err(e) => warn!("Failed to move cursor: {}", e),
+    }
+
+    Ok(())
+}
+
+/// Run the main application event loop
+fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::error::Error>> {
+
     // Set up signal handling for graceful shutdown
     let running = Arc::new(AtomicBool::new(true));
-    let r = running.clone();
-
-    std::thread::spawn(move || {
-        let mut signals = Signals::new([SIGINT, SIGTERM]).expect("Failed to create signal handler");
-        if signals.forever().next().is_some() {
-            r.store(false, Ordering::Relaxed);
-        }
-    });
+    setup_signal_handling(running.clone());
 
     // Main event loop with graceful shutdown
     while running.load(Ordering::Relaxed) {
-        let event = x11_client.next_event();
-        let input_event = input_handler.process_event(&event);
+        let event = app_state.x11_client.next_event();
+        let input_event = app_state.input_handler.process_event(&event);
 
-        match input_event {
-            InputEvent::ModifierPressed => {
-                debug!("Modifier key pressed - showing grid");
-
-                // Calculate and show grid
-                let cells = grid_manager.calculate_grid(screen_info, config.grid_density);
-                renderer.draw_grid(&x11_client, &cells)?;
-                renderer.show_overlay(&x11_client)?;
-            }
-            InputEvent::ModifierReleased => {
-                debug!("Modifier key released - hiding grid");
-
-                // Hide grid and reset state
-                renderer.hide_overlay(&x11_client)?;
-                grid_manager.reset();
-            }
-            InputEvent::NavigationKey(keycode) => {
-                debug!("Navigation key pressed: {}", keycode);
-
-                // Process navigation and move cursor
-                if let Some(target_pos) =
-                    grid_manager.process_key(keycode, screen_info, config.grid_density)
-                {
-                    if let Err(e) = x11_client.warp_cursor(target_pos.x, target_pos.y) {
-                        error!(
-                            "Critical cursor movement failure: {} - target was ({}, {})",
-                            e, target_pos.x, target_pos.y
-                        );
-                        return Err(Box::new(e));
-                    }
-                    debug!("Cursor moved to: ({}, {})", target_pos.x, target_pos.y);
-                } else {
-                    debug!("Unknown navigation key: {}", keycode);
-                }
-            }
-            InputEvent::Unknown => {
-                // Ignore unknown events
-            }
-        }
+        handle_input_event(input_event, &mut app_state)?;
     }
 
     // Proper cleanup on shutdown
-    info!("Shutting down gracefully...");
-    input_handler.stop_capture(&x11_client);
-    renderer.destroy_overlay(&x11_client);
-
+    cleanup_application(&mut app_state);
     Ok(())
+}
+
+/// Set up signal handling for graceful shutdown
+fn setup_signal_handling(running: Arc<AtomicBool>) {
+    std::thread::spawn(move || {
+        let mut signals = Signals::new([SIGINT, SIGTERM]).expect("Failed to create signal handler");
+        if signals.forever().next().is_some() {
+            running.store(false, Ordering::Relaxed);
+        }
+    });
+}
+
+/// Handle a single input event
+fn handle_input_event(input_event: InputEvent, app_state: &mut ApplicationState) -> Result<(), Box<dyn std::error::Error>> {
+    match input_event {
+        InputEvent::ModifierPressed => {
+            debug!("Modifier key pressed - showing grid");
+
+            // Calculate and show grid
+            let cells = app_state.grid_manager.calculate_grid(&app_state.screen_info, app_state.config.grid_density);
+            app_state.renderer.draw_grid(&app_state.x11_client, &cells)?;
+            app_state.renderer.show_overlay(&app_state.x11_client)?;
+        }
+        InputEvent::ModifierReleased => {
+            debug!("Modifier key released - hiding grid");
+
+            // Hide grid and reset state
+            app_state.renderer.hide_overlay(&app_state.x11_client)?;
+            app_state.grid_manager.reset();
+        }
+        InputEvent::NavigationKey(keycode) => {
+            debug!("Navigation key pressed: {}", keycode);
+
+            // Process navigation and move cursor
+            if let Some(target_pos) = app_state.grid_manager.process_key(
+                keycode, 
+                &app_state.screen_info, 
+                app_state.config.grid_density
+            ) {
+                if let Err(e) = app_state.x11_client.warp_cursor(target_pos.x, target_pos.y) {
+                    error!(
+                        "Critical cursor movement failure: {} - target was ({}, {})",
+                        e, target_pos.x, target_pos.y
+                    );
+                    return Err(Box::new(e));
+                }
+                debug!("Cursor moved to: ({}, {})", target_pos.x, target_pos.y);
+            } else {
+                debug!("Unknown navigation key: {}", keycode);
+            }
+        }
+        InputEvent::Unknown => {
+            // Ignore unknown events
+        }
+    }
+    Ok(())
+}
+
+/// Perform cleanup on application shutdown
+fn cleanup_application(app_state: &mut ApplicationState) {
+    info!("Shutting down gracefully...");
+    app_state.input_handler.stop_capture(&app_state.x11_client);
+    app_state.renderer.destroy_overlay(&app_state.x11_client);
 }

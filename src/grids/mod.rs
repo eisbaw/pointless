@@ -1,3 +1,40 @@
+//! Grid layout implementations for Pointless X11 cursor utility
+//!
+//! This module provides pluggable grid layout systems for keyboard-driven cursor positioning.
+//! Following MPED principles, each grid type is implemented as a composable unit that can be
+//! independently tested and reasoned about.
+//!
+//! ## Grid Types
+//!
+//! ### Basic Grids (always available)
+//! - **Homogeneous**: Uniform rectangular grid with A-Z coordinate naming and recursive subdivision
+//! - **QWERTY**: Physical keyboard layout projected onto screen space for intuitive navigation
+//! - **Arrow**: 3x3 directional grid with hierarchical navigation using arrow keys
+//! - **Vim**: Vim-like movement commands (h/j/k/l) with jump targets and screen positioning
+//!
+//! ### Vision-Based Grids (optional, requires OpenCV)
+//! - **Hough**: Line detection grid using Hough transform to find intersection points
+//! - **Rectangle**: Morphological rectangle fitting for UI element detection
+//! - **Edge**: Edge density adaptive grid for content-aware positioning  
+//! - **Color**: Color clustering region detection
+//! - **Feature**: SIFT/ORB feature detection grid
+//!
+//! ## Architecture
+//!
+//! All grids implement the `GridLayout` trait which provides:
+//! - Grid cell calculation with screen-aware positioning
+//! - Key processing with unified interface (screen info always available)
+//! - Coordinate transformation between grid space and screen space
+//! - State management with reset capabilities
+//!
+//! ## Design Principles
+//!
+//! - **Stateless Calculation**: Grid cells are computed on-demand, not cached
+//! - **Fail-Fast**: Input validation happens immediately 
+//! - **Composable**: Each grid can be used independently or combined
+//! - **Minimal State**: Only essential navigation state is maintained
+//! - **Performance**: Sub-20ms latency with efficient coordinate transformations
+
 pub mod arrow;
 pub mod homogeneous;
 pub mod qwerty;
@@ -22,19 +59,14 @@ pub trait GridLayout {
     fn calculate_grid(&self, screen: &ScreenInfo, density: u32) -> Vec<GridCell>;
 
     /// Process key input and return target cell coordinate
-    fn process_key(&mut self, key: KeyCode, current_level: u32) -> Option<GridCoord>;
-
-    /// Process key input with screen info available, return target cell coordinate
-    fn process_key_with_screen(
-        &mut self,
-        key: KeyCode,
-        current_level: u32,
-        _screen: &ScreenInfo,
-        _density: u32,
-    ) -> Option<GridCoord> {
-        // Default implementation delegates to process_key
-        self.process_key(key, current_level)
-    }
+    /// All grids receive screen info and density for consistent interface
+    fn process_key(
+        &mut self, 
+        key: KeyCode, 
+        current_level: u32, 
+        screen: &ScreenInfo, 
+        density: u32
+    ) -> Option<GridCoord>;
 
     /// Get human-readable name for this grid type
     #[allow(dead_code)]
@@ -111,11 +143,11 @@ mod tests {
             let screen = mock_screen();
 
             // First key: select column A (should not return coordinate yet)
-            let result1 = grid.process_key_with_screen(KEYCODE_A, 0, &screen, 4);
+            let result1 = grid.process_key(KEYCODE_A, 0, &screen, 4);
             assert!(result1.is_none());
 
             // Second key: select row 1 (should return coordinate)
-            let result2 = grid.process_key_with_screen(KEYCODE_1, 0, &screen, 4);
+            let result2 = grid.process_key(KEYCODE_1, 0, &screen, 4);
             assert!(result2.is_some());
 
             let coord = result2.expect("Expected coordinate after valid navigation");
@@ -129,13 +161,13 @@ mod tests {
             let screen = mock_screen();
 
             // Select a column
-            grid.process_key_with_screen(KEYCODE_A, 0, &screen, 4);
+            grid.process_key(KEYCODE_A, 0, &screen, 4);
 
             // Reset
             grid.reset();
 
             // Should be able to select the same column again
-            let result = grid.process_key_with_screen(KEYCODE_A, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_A, 0, &screen, 4);
             assert!(result.is_none()); // Still waiting for row selection
         }
     }
@@ -166,7 +198,7 @@ mod tests {
             let screen = mock_screen();
 
             // Press Q (should map to top-left region)
-            let result = grid.process_key_with_screen(KEYCODE_Q, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_Q, 0, &screen, 4);
             assert!(result.is_some());
 
             let coord = result.expect("Expected coordinate after valid navigation");
@@ -180,10 +212,10 @@ mod tests {
             let screen = mock_screen();
 
             // Press a key to start refinement
-            grid.process_key_with_screen(KEYCODE_Q, 0, &screen, 4);
+            grid.process_key(KEYCODE_Q, 0, &screen, 4);
 
             // Press escape to reset
-            let result = grid.process_key_with_screen(KEYCODE_ESCAPE, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_ESCAPE, 0, &screen, 4);
             assert!(result.is_none());
         }
     }
@@ -217,13 +249,13 @@ mod tests {
             assert_eq!(cells.len(), 9);
 
             // Move up
-            let result = grid.process_key_with_screen(KEYCODE_UP, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_UP, 0, &screen, 4);
             assert!(result.is_some());
             let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.y, 0); // Moved from 1 to 0
 
             // Move left
-            let result = grid.process_key_with_screen(KEYCODE_LEFT, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_LEFT, 0, &screen, 4);
             assert!(result.is_some());
             let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.x, 0); // Moved from 1 to 0
@@ -235,11 +267,11 @@ mod tests {
             let screen = mock_screen();
 
             // Move to top-left corner
-            grid.process_key_with_screen(KEYCODE_UP, 0, &screen, 4);
-            grid.process_key_with_screen(KEYCODE_LEFT, 0, &screen, 4);
+            grid.process_key(KEYCODE_UP, 0, &screen, 4);
+            grid.process_key(KEYCODE_LEFT, 0, &screen, 4);
 
             // Try to move further up (should stay at boundary)
-            let result = grid.process_key_with_screen(KEYCODE_UP, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_UP, 0, &screen, 4);
             assert!(result.is_some());
             let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.y, 0); // Should stay at 0
@@ -261,16 +293,16 @@ mod tests {
             let screen = mock_screen();
 
             // Test h/j/k/l movement
-            let result_h = grid.process_key_with_screen(KEYCODE_H, 0, &screen, 4);
+            let result_h = grid.process_key(KEYCODE_H, 0, &screen, 4);
             assert!(result_h.is_some());
 
-            let result_j = grid.process_key_with_screen(KEYCODE_J, 0, &screen, 4);
+            let result_j = grid.process_key(KEYCODE_J, 0, &screen, 4);
             assert!(result_j.is_some());
 
-            let result_k = grid.process_key_with_screen(KEYCODE_K, 0, &screen, 4);
+            let result_k = grid.process_key(KEYCODE_K, 0, &screen, 4);
             assert!(result_k.is_some());
 
-            let result_l = grid.process_key_with_screen(KEYCODE_L, 0, &screen, 4);
+            let result_l = grid.process_key(KEYCODE_L, 0, &screen, 4);
             assert!(result_l.is_some());
         }
 
@@ -280,7 +312,7 @@ mod tests {
             let screen = mock_screen();
 
             // Enter forward jump mode with 'w'
-            let result = grid.process_key_with_screen(KEYCODE_W, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_W, 0, &screen, 4);
             assert!(result.is_none()); // Should enter mode but not move cursor yet
 
             // Calculate grid should now show jump targets
@@ -294,7 +326,7 @@ mod tests {
             let screen = mock_screen();
 
             // Test jump to left edge with '0'
-            let result = grid.process_key_with_screen(KEYCODE_0, 0, &screen, 4);
+            let result = grid.process_key(KEYCODE_0, 0, &screen, 4);
             assert!(result.is_some());
             let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.x, 0); // Should be at left edge
@@ -306,7 +338,7 @@ mod tests {
             let screen = mock_screen();
 
             // Enter jump mode
-            grid.process_key_with_screen(KEYCODE_W, 0, &screen, 4);
+            grid.process_key(KEYCODE_W, 0, &screen, 4);
 
             // Reset
             grid.reset();

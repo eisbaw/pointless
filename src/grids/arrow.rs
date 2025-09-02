@@ -103,11 +103,7 @@ impl GridLayout for ArrowGrid {
         self.calculate_3x3_cells(center, size)
     }
 
-    fn process_key(&mut self, _key: KeyCode, _current_level: u32) -> Option<GridCoord> {
-        None // Use process_key_with_screen instead
-    }
-
-    fn process_key_with_screen(
+    fn process_key(
         &mut self,
         key: KeyCode,
         _current_level: u32,

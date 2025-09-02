@@ -1,3 +1,33 @@
+//! X11 client interface for Pointless cursor positioning utility
+//!
+//! This module provides a safe Rust wrapper around X11 library functions for cursor control,
+//! display management, and input event handling. Following MPED principles, it provides
+//! a focused interface that handles exactly what Pointless needs from X11.
+//!
+//! ## Architecture
+//!
+//! The `X11Client` struct encapsulates:
+//! - X11 display connection management with proper resource cleanup
+//! - Screen information queries (dimensions, root window)
+//! - Cursor positioning via XWarpPointer
+//! - Event processing for input detection
+//! - Error handling with thread-local safety
+//!
+//! ## Safety
+//!
+//! X11 operations are inherently unsafe, but this module provides safe abstractions:
+//! - Display connection is managed with RAII
+//! - Error handling uses thread-local storage to avoid global state
+//! - All X11 calls are wrapped with proper error checking
+//! - Resource cleanup happens automatically via Drop trait
+//!
+//! ## Vision Grids Support
+//!
+//! When compiled with the `vision-grids` feature, additional functionality is available:
+//! - Screenshot capture via XGetImage
+//! - Image data access for OpenCV processing
+//! - Memory management for image resources
+
 use crate::error::{PointlessError, Result};
 use std::ptr;
 use x11::xlib::{
