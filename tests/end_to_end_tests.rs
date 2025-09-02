@@ -1,4 +1,5 @@
 use pointless::{Config, GridType, ModifierKey, PointlessError};
+use pointless::config::MoveStyle;
 use std::env;
 
 #[cfg(test)]
@@ -26,6 +27,8 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
             Config {
                 grid_type: GridType::Vim,
@@ -36,6 +39,8 @@ mod end_to_end_tests {
                 debug: true,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
         ];
 
@@ -58,6 +63,8 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
             Config {
                 grid_type: GridType::Homogeneous,
@@ -68,6 +75,8 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
             Config {
                 grid_type: GridType::Homogeneous,
@@ -78,6 +87,8 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
         ];
 
@@ -111,6 +122,8 @@ mod end_to_end_tests {
             debug: false,
             png_output: None,
             png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
         };
 
         // Initialize X11 client
@@ -222,6 +235,8 @@ mod end_to_end_tests {
             debug: false,
             png_output: None,
             png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
         };
 
         for _ in 0..10 {
@@ -305,6 +320,8 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
             // Maximum reasonable values
             Config {
@@ -316,6 +333,8 @@ mod end_to_end_tests {
                 debug: true,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             },
         ];
 
@@ -353,6 +372,8 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
             };
 
             // Should validate successfully

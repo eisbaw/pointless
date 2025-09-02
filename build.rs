@@ -37,6 +37,6 @@ fn main() {
 
     // Explicitly link XFixes for the overlay demo
     println!("cargo:rustc-link-lib=Xfixes");
-    
+
     println!("cargo:rerun-if-changed=build.rs");
 }

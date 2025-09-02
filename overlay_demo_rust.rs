@@ -1,7 +1,7 @@
 extern crate x11;
 
-use x11::xlib::*;
 use std::ptr;
+use x11::xlib::*;
 
 // Simple types for the demo
 #[derive(Debug, Clone, Copy)]
@@ -27,13 +27,22 @@ struct GridCell {
 
 impl Rectangle {
     fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
-        Self { x, y, width, height }
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 }
 
 impl GridCell {
     fn new(coord: GridCoord, screen_rect: Rectangle, label: String) -> Self {
-        Self { coord, screen_rect, label }
+        Self {
+            coord,
+            screen_rect,
+            label,
+        }
     }
 }
 
@@ -42,10 +51,10 @@ fn generate_grid(screen_width: u32, screen_height: u32, density: u32) -> Vec<Gri
     let mut cells = Vec::new();
     let cols = density;
     let rows = density;
-    
+
     let cell_width = screen_width / cols;
     let cell_height = screen_height / rows;
-    
+
     for row in 0..rows {
         for col in 0..cols {
             let coord = GridCoord { x: col, y: row };
@@ -55,16 +64,16 @@ fn generate_grid(screen_width: u32, screen_height: u32, density: u32) -> Vec<Gri
                 cell_width,
                 cell_height,
             );
-            
+
             // Create label like A1, B1, C1, A2, B2, C2, etc.
             let col_char = (b'A' + (col % 26) as u8) as char;
             let row_num = row + 1;
             let label = format!("{}{}", col_char, row_num);
-            
+
             cells.push(GridCell::new(coord, rect, label));
         }
     }
-    
+
     cells
 }
 
@@ -79,11 +88,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let screen = XDefaultScreen(display);
         let root = XRootWindow(display, screen);
-        
+
         // Find 32-bit ARGB visual for transparency
         let mut vinfo: XVisualInfo = std::mem::zeroed();
         let visual_found = XMatchVisualInfo(display, screen, 32, TrueColor, &mut vinfo) != 0;
-        
+
         if !visual_found {
             println!("32-bit ARGB visual not found, falling back to 24-bit");
             if XMatchVisualInfo(display, screen, 24, TrueColor, &mut vinfo) == 0 {
@@ -112,8 +121,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let overlay = XCreateWindow(
             display,
             root,
-            0, 0,
-            width, height,
+            0,
+            0,
+            width,
+            height,
             0, // border_width
             vinfo.depth,
             InputOutput as u32,
@@ -173,26 +184,69 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Draw grid cells
         for cell in &grid_cells {
             let rect = &cell.screen_rect;
-            
+
             // Draw cell border using 4 lines
             // Top line
-            XDrawLine(display, overlay, gc, rect.x, rect.y, rect.x + rect.width as i32, rect.y);
-            // Bottom line  
-            XDrawLine(display, overlay, gc, rect.x, rect.y + rect.height as i32, rect.x + rect.width as i32, rect.y + rect.height as i32);
+            XDrawLine(
+                display,
+                overlay,
+                gc,
+                rect.x,
+                rect.y,
+                rect.x + rect.width as i32,
+                rect.y,
+            );
+            // Bottom line
+            XDrawLine(
+                display,
+                overlay,
+                gc,
+                rect.x,
+                rect.y + rect.height as i32,
+                rect.x + rect.width as i32,
+                rect.y + rect.height as i32,
+            );
             // Left line
-            XDrawLine(display, overlay, gc, rect.x, rect.y, rect.x, rect.y + rect.height as i32);
+            XDrawLine(
+                display,
+                overlay,
+                gc,
+                rect.x,
+                rect.y,
+                rect.x,
+                rect.y + rect.height as i32,
+            );
             // Right line
-            XDrawLine(display, overlay, gc, rect.x + rect.width as i32, rect.y, rect.x + rect.width as i32, rect.y + rect.height as i32);
-            
-            // Draw cell label at center  
+            XDrawLine(
+                display,
+                overlay,
+                gc,
+                rect.x + rect.width as i32,
+                rect.y,
+                rect.x + rect.width as i32,
+                rect.y + rect.height as i32,
+            );
+
+            // Draw cell label at center
             let center_x = rect.x + (rect.width / 2) as i32;
             let center_y = rect.y + (rect.height / 2) as i32;
-            
+
             // Draw text - position it roughly at center
             let label_cstr = std::ffi::CString::new(cell.label.clone()).unwrap();
-            XDrawString(display, overlay, gc, center_x - 10, center_y + 5, label_cstr.as_ptr(), cell.label.len() as i32);
-            
-            println!("Drew grid cell {} at ({}, {}) size {}x{}", cell.label, rect.x, rect.y, rect.width, rect.height);
+            XDrawString(
+                display,
+                overlay,
+                gc,
+                center_x - 10,
+                center_y + 5,
+                label_cstr.as_ptr(),
+                cell.label.len() as i32,
+            );
+
+            println!(
+                "Drew grid cell {} at ({}, {}) size {}x{}",
+                cell.label, rect.x, rect.y, rect.width, rect.height
+            );
         }
 
         // Flush all drawing operations

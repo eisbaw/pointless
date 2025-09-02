@@ -31,7 +31,7 @@ impl Renderer {
     ///
     /// # Errors
     /// Returns `PointlessError::RenderingFailed` if X11 overlay window creation fails
-    pub fn create_overlay(&mut self, x11_client: &X11Client, config: &Config) -> Result<()> {
+    pub fn create_overlay(&mut self, _x11_client: &X11Client, _config: &Config) -> Result<()> {
         // Idempotency guard - avoid creating multiple overlays
         if self.overlay_window.is_some() {
             return Ok(());
@@ -49,30 +49,31 @@ impl Renderer {
     pub fn show_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         // Always create a fresh window like the working demo
         let screen_info = x11_client.screen_info();
-        let overlay_window = x11_client.create_overlay_window(0, 0, screen_info.width, screen_info.height)?;
+        let overlay_window =
+            x11_client.create_overlay_window(0, 0, screen_info.width, screen_info.height)?;
         let gc = x11_client.create_graphics_context(overlay_window)?;
-        
+
         // Set yellow color like working demo
         unsafe {
             x11_client.set_foreground_color(gc, 0xFFFF00);
         }
-        
+
         // Map window immediately like working demo
         x11_client.map_window(overlay_window)?;
         unsafe {
             x11::xlib::XRaiseWindow(x11_client.display_ptr(), overlay_window);
         }
         x11_client.flush();
-        
+
         // Clean up any existing window first
         if let Some(old_window) = self.overlay_window {
             x11_client.destroy_window(old_window);
         }
-        
+
         self.overlay_window = Some(overlay_window);
         self.gc = Some(gc);
         self.is_visible = true;
-        
+
         Ok(())
     }
 
@@ -95,27 +96,66 @@ impl Renderer {
     /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn draw_grid(&mut self, x11_client: &X11Client, cells: &[GridCell]) -> Result<()> {
         if let (Some(window), Some(gc)) = (self.overlay_window, self.gc) {
-            log::debug!("Drawing grid on window {} with {} cells", window, cells.len());
-            
+            log::debug!(
+                "Drawing grid on window {} with {} cells",
+                window,
+                cells.len()
+            );
+
             // Clear the window
             x11_client.clear_window(window);
 
             // Draw each grid cell using lines (like working demo)
             for (i, cell) in cells.iter().enumerate() {
                 let rect = &cell.screen_rect;
-                log::debug!("Drawing cell {} '{}' at ({}, {}) size {}x{}", 
-                           i, cell.label, rect.x, rect.y, rect.width, rect.height);
+                log::debug!(
+                    "Drawing cell {} '{}' at ({}, {}) size {}x{}",
+                    i,
+                    cell.label,
+                    rect.x,
+                    rect.y,
+                    rect.width,
+                    rect.height
+                );
 
                 // Draw cell border using 4 lines (like working demo approach)
                 unsafe {
                     // Top line
-                    x11_client.draw_line(window, gc, rect.x, rect.y, rect.x + rect.width as i32, rect.y);
-                    // Bottom line  
-                    x11_client.draw_line(window, gc, rect.x, rect.y + rect.height as i32, rect.x + rect.width as i32, rect.y + rect.height as i32);
+                    x11_client.draw_line(
+                        window,
+                        gc,
+                        rect.x,
+                        rect.y,
+                        rect.x + rect.width as i32,
+                        rect.y,
+                    );
+                    // Bottom line
+                    x11_client.draw_line(
+                        window,
+                        gc,
+                        rect.x,
+                        rect.y + rect.height as i32,
+                        rect.x + rect.width as i32,
+                        rect.y + rect.height as i32,
+                    );
                     // Left line
-                    x11_client.draw_line(window, gc, rect.x, rect.y, rect.x, rect.y + rect.height as i32);
+                    x11_client.draw_line(
+                        window,
+                        gc,
+                        rect.x,
+                        rect.y,
+                        rect.x,
+                        rect.y + rect.height as i32,
+                    );
                     // Right line
-                    x11_client.draw_line(window, gc, rect.x + rect.width as i32, rect.y, rect.x + rect.width as i32, rect.y + rect.height as i32);
+                    x11_client.draw_line(
+                        window,
+                        gc,
+                        rect.x + rect.width as i32,
+                        rect.y,
+                        rect.x + rect.width as i32,
+                        rect.y + rect.height as i32,
+                    );
                 }
 
                 // Draw cell label at center
@@ -134,8 +174,11 @@ impl Renderer {
             x11_client.flush();
             log::debug!("Drawing completed");
         } else {
-            log::error!("Cannot draw grid - window or gc is None: window={:?}, gc={:?}", 
-                       self.overlay_window, self.gc);
+            log::error!(
+                "Cannot draw grid - window or gc is None: window={:?}, gc={:?}",
+                self.overlay_window,
+                self.gc
+            );
         }
         Ok(())
     }

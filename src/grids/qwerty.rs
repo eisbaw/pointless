@@ -144,6 +144,17 @@ impl GridLayout for QwertyGrid {
                 );
 
                 let label = self.keycode_to_label(keycode);
+                log::debug!(
+                    "QWERTY calculate_grid: key {} at grid({}, {}) -> box={}x{}+{}+{} label={}",
+                    keycode,
+                    coord.x,
+                    coord.y,
+                    rect.width,
+                    rect.height,
+                    rect.x,
+                    rect.y,
+                    label
+                );
                 cells.push(GridCell::new(coord, rect, label));
             }
         }
@@ -204,10 +215,17 @@ impl GridLayout for QwertyGrid {
         for (row_idx, row) in qwerty_rows.iter().enumerate() {
             for (col_idx, &keycode) in row.iter().enumerate() {
                 if keycode == key {
-                    return Some(GridCoord {
+                    let coord = GridCoord {
                         x: col_idx as u32,
                         y: row_idx as u32,
-                    });
+                    };
+                    log::debug!(
+                        "QWERTY process_key: key {} -> grid({}, {})",
+                        key,
+                        coord.x,
+                        coord.y
+                    );
+                    return Some(coord);
                 }
             }
         }
@@ -229,26 +247,65 @@ impl GridLayout for QwertyGrid {
         &self,
         coord: GridCoord,
         screen: &ScreenInfo,
-        density: u32,
+        _density: u32,
     ) -> ScreenCoord {
-        use crate::coordinate_resolver::CoordinateResolver;
+        // Calculate the grid based on the full screen (ignoring selected_region for cursor positioning)
+        // We need to temporarily create a fresh grid to get the original coordinates
+        let full_screen_region = Rectangle::new(0, 0, screen.width, screen.height);
 
-        // If we have a selected refinement region, calculate within it
-        if let Some(region) = &self.selected_region {
-            // QWERTY refinement is typically 4x3 layout
-            let cols = 4;
-            let rows = 3;
+        // Define QWERTY layout (same as in calculate_grid)
+        let qwerty_rows = [
+            vec![
+                KEYCODE_Q, KEYCODE_W, KEYCODE_E, KEYCODE_R, KEYCODE_T, KEYCODE_Y, KEYCODE_U,
+                KEYCODE_I, KEYCODE_O, KEYCODE_P,
+            ],
+            vec![
+                KEYCODE_A, KEYCODE_S, KEYCODE_D, KEYCODE_F, KEYCODE_G, KEYCODE_H, KEYCODE_J,
+                KEYCODE_K, KEYCODE_L,
+            ],
+            vec![
+                KEYCODE_Z, KEYCODE_X, KEYCODE_C, KEYCODE_V, KEYCODE_B, KEYCODE_N, KEYCODE_M,
+            ],
+        ];
 
-            let cell_width = region.width / cols;
-            let cell_height = region.height / rows;
+        let rows = qwerty_rows.len() as u32;
+        let row_height = full_screen_region.height / rows;
 
-            let x = region.x + (coord.x * cell_width) as i32 + (cell_width / 2) as i32;
-            let y = region.y + (coord.y * cell_height) as i32 + (cell_height / 2) as i32;
+        for (row_idx, row) in qwerty_rows.iter().enumerate() {
+            let cols = row.len() as u32;
+            let col_width = full_screen_region.width / cols;
 
-            ScreenCoord { x, y }
-        } else {
-            // Use the coordinate resolver for full-screen calculation
-            CoordinateResolver::grid_to_screen_qwerty(coord, screen, density)
+            for (col_idx, _keycode) in row.iter().enumerate() {
+                let cell_coord = GridCoord {
+                    x: col_idx as u32,
+                    y: row_idx as u32,
+                };
+
+                if cell_coord == coord {
+                    let rect_x = full_screen_region.x + (col_idx as u32 * col_width) as i32;
+                    let rect_y = full_screen_region.y + (row_idx as u32 * row_height) as i32;
+
+                    let center_x = rect_x + (col_width / 2) as i32;
+                    let center_y = rect_y + (row_height / 2) as i32;
+
+                    log::debug!("QWERTY box center: grid({}, {}) -> screen({}, {}) [full_screen_box={}x{}+{}+{}]", 
+                               coord.x, coord.y, center_x, center_y, 
+                               col_width, row_height, rect_x, rect_y);
+
+                    return ScreenCoord {
+                        x: center_x,
+                        y: center_y,
+                    };
+                }
+            }
         }
+
+        // Fallback - should not happen
+        log::warn!(
+            "Could not find box for grid coordinate ({}, {})",
+            coord.x,
+            coord.y
+        );
+        ScreenCoord { x: 0, y: 0 }
     }
 }

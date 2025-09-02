@@ -228,12 +228,12 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
     // If always_show is enabled, show the grid immediately
     if app_state.config.always_show {
         debug!("Always-show mode enabled - displaying grid immediately");
-        
+
         let cells = app_state
             .grid_manager
             .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
         debug!("Generated {} grid cells for always-show mode", cells.len());
-        
+
         // Show overlay FIRST (creates window), then draw
         app_state.renderer.show_overlay(&app_state.x11_client)?;
         app_state
@@ -247,7 +247,7 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
         // Check if there are any pending X11 events first
         if app_state.x11_client.has_pending_events() {
             let event = app_state.x11_client.next_event();
-            
+
             // In always-show mode, ignore input events and just keep running
             if !app_state.config.always_show {
                 let input_event = app_state.input_handler.process_event(&event);
@@ -298,7 +298,7 @@ fn handle_input_event(
                 debug!("First cell: {:?}", cells[0]);
                 debug!("Last cell: {:?}", cells[cells.len() - 1]);
             }
-            
+
             // Show overlay FIRST (creates window), then draw
             debug!("Showing overlay");
             app_state.renderer.show_overlay(&app_state.x11_client)?;
@@ -324,7 +324,10 @@ fn handle_input_event(
                 &app_state.screen_info,
                 app_state.config.grid_density,
             ) {
-                if let Err(e) = app_state.cursor_animator.animate_move(&app_state.x11_client, target_pos) {
+                if let Err(e) = app_state
+                    .cursor_animator
+                    .animate_move(&app_state.x11_client, target_pos)
+                {
                     error!(
                         "Critical cursor movement failure: {} - target was ({}, {})",
                         e, target_pos.x, target_pos.y

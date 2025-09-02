@@ -34,20 +34,34 @@ impl CoordinateResolver {
 
     /// Convert grid coordinate to screen coordinate for QWERTY grids
     #[must_use]
-    pub const fn grid_to_screen_qwerty(
+    pub fn grid_to_screen_qwerty(
         coord: GridCoord,
         screen: &ScreenInfo,
         _density: u32,
     ) -> ScreenCoord {
-        // QWERTY layout is 10 columns (keys 0-9) by 4 rows (number, QWERTY, ASDF, ZXCV)
-        let cols = 10;
-        let rows = 4;
+        // QWERTY layout has variable columns per row:
+        // Row 0: Q-P (10 keys)
+        // Row 1: A-L (9 keys)
+        // Row 2: Z-M (7 keys)
+        let row_key_counts = [10, 9, 7];
+        let rows = 3;
 
-        let cell_width = screen.width / cols;
-        let cell_height = screen.height / rows;
+        let row_height = screen.height / rows;
 
-        let x = (coord.x * cell_width + cell_width / 2) as i32;
-        let y = (coord.y * cell_height + cell_height / 2) as i32;
+        // Get the number of keys in this row
+        let row_keys = if coord.y < row_key_counts.len() as u32 {
+            row_key_counts[coord.y as usize]
+        } else {
+            10 // fallback
+        };
+
+        let col_width = screen.width / row_keys;
+
+        let x = (coord.x * col_width + col_width / 2) as i32;
+        let y = (coord.y * row_height + row_height / 2) as i32;
+
+        log::debug!("QWERTY coordinate conversion: grid({}, {}) -> screen({}, {}) [screen={}x{}, row_keys={}, cell={}x{}]", 
+                   coord.x, coord.y, x, y, screen.width, screen.height, row_keys, col_width, row_height);
 
         ScreenCoord { x, y }
     }
@@ -119,7 +133,9 @@ mod tests {
         let screen_coord = CoordinateResolver::grid_to_screen_qwerty(coord, &screen, 4);
 
         // Should be center of specified QWERTY cell
-        assert_eq!(screen_coord.x, 288); // (1 * 192 + 96)
-        assert_eq!(screen_coord.y, 405); // (1 * 270 + 135)
+        // Row 1 has 9 keys (A-L), so col_width = 1920/9 = 213 (integer division)
+        // Center of column 1 = 213 * 1 + 213/2 = 213 + 106 = 319
+        assert_eq!(screen_coord.x, 319); // (1 * 213 + 106)
+        assert_eq!(screen_coord.y, 540); // (1 * 360 + 180) for 3 rows
     }
 }
