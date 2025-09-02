@@ -88,21 +88,24 @@ impl Config {
     pub fn parse_png_resolution(&self) -> crate::error::Result<(u32, u32)> {
         let parts: Vec<&str> = self.png_resolution.split('x').collect();
         if parts.len() != 2 {
-            return Err(crate::error::PointlessError::InvalidCoordinate(
-                format!("Invalid resolution format '{}'. Expected WIDTHxHEIGHT (e.g., 1920x1080)", self.png_resolution)
-            ));
+            return Err(crate::error::PointlessError::InvalidCoordinate(format!(
+                "Invalid resolution format '{}'. Expected WIDTHxHEIGHT (e.g., 1920x1080)",
+                self.png_resolution
+            )));
         }
 
         let width: u32 = parts[0].parse().map_err(|_| {
-            crate::error::PointlessError::InvalidCoordinate(
-                format!("Invalid width '{}' in resolution '{}'", parts[0], self.png_resolution)
-            )
+            crate::error::PointlessError::InvalidCoordinate(format!(
+                "Invalid width '{}' in resolution '{}'",
+                parts[0], self.png_resolution
+            ))
         })?;
 
         let height: u32 = parts[1].parse().map_err(|_| {
-            crate::error::PointlessError::InvalidCoordinate(
-                format!("Invalid height '{}' in resolution '{}'", parts[1], self.png_resolution)
-            )
+            crate::error::PointlessError::InvalidCoordinate(format!(
+                "Invalid height '{}' in resolution '{}'",
+                parts[1], self.png_resolution
+            ))
         })?;
 
         Ok((width, height))

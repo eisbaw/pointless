@@ -280,6 +280,12 @@ impl X11Client {
     }
 
     /// Set foreground color for drawing operations
+    ///
+    /// # Safety
+    /// The caller must ensure that:
+    /// - `gc` is a valid graphics context pointer created by `create_graphics_context`
+    /// - `gc` has not been freed or invalidated
+    /// - The graphics context is associated with the current X11 display
     pub unsafe fn set_foreground_color(&self, gc: *mut x11::xlib::_XGC, color: u64) {
         use x11::xlib::XSetForeground;
 
@@ -289,6 +295,13 @@ impl X11Client {
     }
 
     /// Draw a rectangle outline
+    ///
+    /// # Safety
+    /// The caller must ensure that:
+    /// - `gc` is a valid graphics context pointer created by `create_graphics_context`
+    /// - `window` is a valid window ID that exists on the current display
+    /// - `gc` has not been freed or invalidated
+    /// - The coordinates and dimensions are within valid bounds for the window
     pub unsafe fn draw_rectangle(
         &self,
         window: u64,
@@ -306,7 +319,22 @@ impl X11Client {
     }
 
     /// Draw text at specified position
-    pub unsafe fn draw_text(&self, window: u64, gc: *mut x11::xlib::_XGC, x: i32, y: i32, text: &str) {
+    ///
+    /// # Safety
+    /// The caller must ensure that:
+    /// - `gc` is a valid graphics context pointer created by `create_graphics_context`
+    /// - `window` is a valid window ID that exists on the current display
+    /// - `gc` has not been freed or invalidated
+    /// - `text` is valid UTF-8 and does not contain null bytes (handled internally)
+    /// - The coordinates are within valid bounds for the window
+    pub unsafe fn draw_text(
+        &self,
+        window: u64,
+        gc: *mut x11::xlib::_XGC,
+        x: i32,
+        y: i32,
+        text: &str,
+    ) {
         use std::ffi::CString;
         use x11::xlib::XDrawString;
 
@@ -412,18 +440,6 @@ impl X11Client {
         }
 
         Ok(())
-    }
-
-    // DEPRECATED: These methods expose raw pointers and break encapsulation.
-    // Use the safe wrapper methods above instead.
-    #[deprecated(since = "0.1.0", note = "Use safe window management methods instead")]
-    pub fn display(&self) -> *mut Display {
-        self.display
-    }
-
-    #[deprecated(since = "0.1.0", note = "Access root window via screen_info() instead")]
-    pub fn root_window(&self) -> u64 {
-        self.root_window
     }
 }
 

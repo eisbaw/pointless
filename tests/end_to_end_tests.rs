@@ -24,6 +24,8 @@ mod end_to_end_tests {
                 color: "FFFF00".to_string(),
                 opacity: 0.8,
                 debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
             Config {
                 grid_type: GridType::Vim,
@@ -32,6 +34,8 @@ mod end_to_end_tests {
                 color: "FF0000".to_string(),
                 opacity: 1.0,
                 debug: true,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
         ];
 
@@ -52,6 +56,8 @@ mod end_to_end_tests {
                 color: "FFFF00".to_string(),
                 opacity: 0.8,
                 debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
             Config {
                 grid_type: GridType::Homogeneous,
@@ -60,6 +66,8 @@ mod end_to_end_tests {
                 color: "FFFF00".to_string(),
                 opacity: -0.1, // Invalid: negative opacity
                 debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
             Config {
                 grid_type: GridType::Homogeneous,
@@ -68,6 +76,8 @@ mod end_to_end_tests {
                 color: "FFFF00".to_string(),
                 opacity: 1.5, // Invalid: opacity > 1.0
                 debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
         ];
 
@@ -99,6 +109,8 @@ mod end_to_end_tests {
             color: "FFFF00".to_string(),
             opacity: 0.8,
             debug: false,
+            png_output: None,
+            png_resolution: "1920x1080".to_string(),
         };
 
         // Initialize X11 client
@@ -206,6 +218,8 @@ mod end_to_end_tests {
             color: "FFFF00".to_string(),
             opacity: 0.8,
             debug: false,
+            png_output: None,
+            png_resolution: "1920x1080".to_string(),
         };
 
         for _ in 0..10 {
@@ -287,6 +301,8 @@ mod end_to_end_tests {
                 color: "000000".to_string(), // Black
                 opacity: 0.0,                // Fully transparent
                 debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
             // Maximum reasonable values
             Config {
@@ -296,6 +312,8 @@ mod end_to_end_tests {
                 color: "FFFFFF".to_string(), // White
                 opacity: 1.0,                // Fully opaque
                 debug: true,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             },
         ];
 
@@ -331,6 +349,8 @@ mod end_to_end_tests {
                 color: "FFFF00".to_string(),
                 opacity: 0.8,
                 debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
             };
 
             // Should validate successfully

@@ -1,15 +1,9 @@
 use crate::config::Config;
 use crate::constants::*;
-use crate::error::{PointlessError, Result};
+use crate::error::Result;
 use crate::types::GridCell;
 use crate::x11_client::X11Client;
-use std::ffi::CString;
-use std::ptr;
-use x11::xlib::{
-    CWBackPixel, CWBorderPixel, CWOverrideRedirect, InputOutput, Window, XClearWindow, XCreateGC,
-    XCreateWindow, XDestroyWindow, XDrawRectangle, XDrawString, XFlush, XMapWindow, XSetForeground,
-    XSetWindowAttributes, XStoreName, XUnmapWindow, GC,
-};
+use x11::xlib::{Window, GC};
 
 pub struct Renderer {
     overlay_window: Option<Window>,
@@ -45,50 +39,16 @@ impl Renderer {
 
         let screen_info = x11_client.screen_info();
 
+        let overlay_window =
+            x11_client.create_overlay_window(0, 0, screen_info.width, screen_info.height)?;
+
+        // Create graphics context
+        let gc = x11_client.create_graphics_context(overlay_window)?;
+
+        // Set foreground color - fail fast if invalid color
+        let color_rgb = config.color_rgb()?;
         unsafe {
-            let display = x11_client.display();
-            let root = x11_client.root_window();
-
-            // Create overlay window with override_redirect
-            let mut window_attrs: XSetWindowAttributes = std::mem::zeroed();
-            window_attrs.override_redirect = 1; // Override window manager
-            window_attrs.background_pixel = 0; // Transparent background
-            window_attrs.border_pixel = 0;
-
-            let overlay_window = XCreateWindow(
-                display,
-                root,
-                0,
-                0, // x, y
-                screen_info.width,
-                screen_info.height,                               // width, height
-                0,                                                // border_width
-                0,                                                // depth (CopyFromParent)
-                InputOutput as u32,                               // class
-                ptr::null_mut(),                                  // visual (CopyFromParent)
-                CWOverrideRedirect | CWBackPixel | CWBorderPixel, // valuemask
-                &mut window_attrs,
-            );
-
-            if overlay_window == 0 {
-                return Err(PointlessError::WindowCreationFailed);
-            }
-
-            // Set window name for debugging
-            let window_name = CString::new("Pointless Overlay")
-                .map_err(|_| PointlessError::WindowCreationFailed)?;
-            XStoreName(display, overlay_window, window_name.as_ptr());
-
-            // Create graphics context
-            let gc = XCreateGC(display, overlay_window, 0, ptr::null_mut());
-            if gc.is_null() {
-                XDestroyWindow(display, overlay_window);
-                return Err(PointlessError::GraphicsContextFailed);
-            }
-
-            // Set foreground color - fail fast if invalid color
-            let color_rgb = config.color_rgb()?;
-            XSetForeground(display, gc, color_rgb as u64);
+            x11_client.set_foreground_color(gc, color_rgb as u64);
 
             self.overlay_window = Some(overlay_window);
             self.gc = Some(gc);
@@ -104,10 +64,8 @@ impl Renderer {
     pub fn show_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         if let Some(window) = self.overlay_window {
             if !self.is_visible {
-                unsafe {
-                    XMapWindow(x11_client.display(), window);
-                    XFlush(x11_client.display());
-                }
+                x11_client.map_window(window)?;
+                x11_client.flush();
                 self.is_visible = true;
             }
         }
@@ -121,10 +79,8 @@ impl Renderer {
     pub fn hide_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         if let Some(window) = self.overlay_window {
             if self.is_visible {
-                unsafe {
-                    XUnmapWindow(x11_client.display(), window);
-                    XFlush(x11_client.display());
-                }
+                x11_client.unmap_window(window)?;
+                x11_client.flush();
                 self.is_visible = false;
             }
         }
@@ -137,41 +93,31 @@ impl Renderer {
     /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn draw_grid(&mut self, x11_client: &X11Client, cells: &[GridCell]) -> Result<()> {
         if let (Some(window), Some(gc)) = (self.overlay_window, self.gc) {
-            unsafe {
-                let display = x11_client.display();
+            // Clear the window
+            x11_client.clear_window(window);
 
-                // Clear the window
-                XClearWindow(display, window);
+            // Draw each grid cell
+            for cell in cells {
+                let rect = &cell.screen_rect;
 
-                // Draw each grid cell
-                for cell in cells {
-                    let rect = &cell.screen_rect;
-
-                    // Draw the cell border (1-pixel yellow lines)
-                    XDrawRectangle(display, window, gc, rect.x, rect.y, rect.width, rect.height);
-
-                    // Draw cell label at center
-                    let label_cstring = CString::new(cell.label.as_str())
-                        .map_err(|_| PointlessError::WindowCreationFailed)?;
-                    let center = rect.center();
-
-                    // Position text approximately at center using constants
-                    let text_x = center.x - ((cell.label.len() * CHAR_WIDTH_ESTIMATE) as i32 / 2);
-                    let text_y = center.y + TEXT_VERTICAL_OFFSET;
-
-                    XDrawString(
-                        display,
-                        window,
-                        gc,
-                        text_x,
-                        text_y,
-                        label_cstring.as_ptr(),
-                        cell.label.len() as i32,
-                    );
+                // Draw the cell border (1-pixel yellow lines)
+                unsafe {
+                    x11_client.draw_rectangle(window, gc, rect.x, rect.y, rect.width, rect.height);
                 }
 
-                XFlush(display);
+                // Draw cell label at center
+                let center = rect.center();
+
+                // Position text approximately at center using constants
+                let text_x = center.x - ((cell.label.len() * CHAR_WIDTH_ESTIMATE) as i32 / 2);
+                let text_y = center.y + TEXT_VERTICAL_OFFSET;
+
+                unsafe {
+                    x11_client.draw_text(window, gc, text_x, text_y, &cell.label);
+                }
             }
+
+            x11_client.flush();
         }
         Ok(())
     }
@@ -183,29 +129,31 @@ impl Renderer {
     }
 
     pub fn destroy_overlay(&mut self, x11_client: &X11Client) {
-        unsafe {
-            let display = x11_client.display();
-
-            if let Some(window) = self.overlay_window.take() {
-                XDestroyWindow(display, window);
-            }
-
-            // Note: GC is automatically freed when window is destroyed
-            self.gc = None;
-            self.is_visible = false;
+        if let Some(window) = self.overlay_window.take() {
+            x11_client.destroy_window(window);
         }
+
+        // Note: GC is automatically freed when window is destroyed
+        self.gc = None;
+        self.is_visible = false;
     }
 }
 
 impl Drop for Renderer {
     fn drop(&mut self) {
-        // Defensive programming: warn if resources weren't properly cleaned up
+        // MPED fail-fast principle: programmer error to drop without cleanup
         if self.overlay_window.is_some() || self.gc.is_some() {
-            eprintln!(
-                "Warning: Renderer dropped without calling destroy_overlay(). \
-                This may leak X11 resources (window: {:?}, gc: {:?})",
+            log::error!(
+                "CRITICAL: Renderer dropped without calling destroy_overlay() - X11 resource leak! \
+                window: {:?}, gc: {:?}. This is a programmer error.",
                 self.overlay_window.is_some(),
                 self.gc.is_some()
+            );
+
+            // In debug builds, panic to catch this error immediately during development
+            debug_assert!(
+                false,
+                "Renderer must call destroy_overlay() before drop to prevent X11 resource leaks"
             );
         }
     }

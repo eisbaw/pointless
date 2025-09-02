@@ -67,7 +67,10 @@ fn render_to_png(config: Config, png_path: &str) -> Result<(), Box<dyn std::erro
     info!("PNG rendering mode enabled");
     info!("Output file: {}", png_path);
     info!("Grid type: {:?}", config.grid_type);
-    info!("Screen resolution: {}x{}", screen_info.width, screen_info.height);
+    info!(
+        "Screen resolution: {}x{}",
+        screen_info.width, screen_info.height
+    );
 
     // Initialize grid manager and generate grid
     let grid_manager = GridManager::new(config.grid_type.clone());

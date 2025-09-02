@@ -45,11 +45,3 @@ pub enum PointlessError {
 }
 
 pub type Result<T> = std::result::Result<T, PointlessError>;
-
-impl From<std::num::ParseIntError> for PointlessError {
-    fn from(_: std::num::ParseIntError) -> Self {
-        PointlessError::InvalidColorFormat {
-            color: "unknown".to_string(),
-        }
-    }
-}

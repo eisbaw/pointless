@@ -5,7 +5,7 @@ use crate::x11_client::X11Client;
 use std::ffi::CString;
 use x11::xlib::{
     ControlMask, KeyPress as KEY_PRESS, KeyPressMask, KeyRelease as KEY_RELEASE, KeyReleaseMask,
-    Mod1Mask, Mod4Mask, XEvent, XKeysymToKeycode, XStringToKeysym,
+    Mod1Mask, Mod4Mask, XEvent, XStringToKeysym,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -61,11 +61,7 @@ impl InputHandler {
                 });
             }
 
-            let keycode = XKeysymToKeycode(x11_client.display(), keysym) as KeyCode;
-
-            if keycode == 0 {
-                return Err(PointlessError::InvalidKeycode { keycode });
-            }
+            let keycode = x11_client.keysym_to_keycode(keysym)?;
 
             Ok((keycode, modifier_mask))
         }
