@@ -237,12 +237,19 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
 
     // Main event loop with graceful shutdown
     while running.load(Ordering::Relaxed) {
-        let event = app_state.x11_client.next_event();
-        
-        // In always-show mode, ignore input events and just keep running
-        if !app_state.config.always_show {
-            let input_event = app_state.input_handler.process_event(&event);
-            handle_input_event(input_event, &mut app_state)?;
+        // Check if there are any pending X11 events first
+        if app_state.x11_client.has_pending_events() {
+            let event = app_state.x11_client.next_event();
+            
+            // In always-show mode, ignore input events and just keep running
+            if !app_state.config.always_show {
+                let input_event = app_state.input_handler.process_event(&event);
+                handle_input_event(input_event, &mut app_state)?;
+            }
+        } else {
+            // No X11 events pending - sleep briefly to avoid busy waiting
+            // This allows signal handler to work
+            std::thread::sleep(std::time::Duration::from_millis(10));
         }
     }
 
