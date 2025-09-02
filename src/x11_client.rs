@@ -91,9 +91,9 @@ impl X11Client {
 
             // Find 32-bit ARGB visual for transparency
             let mut vinfo: x11::xlib::XVisualInfo = std::mem::zeroed();
-            let mut visual = ptr::null_mut();
-            let mut colormap = 0;
-            let mut depth = 24;
+            let visual;
+            let colormap;
+            let depth;
 
             if x11::xlib::XMatchVisualInfo(display, screen, 32, x11::xlib::TrueColor, &mut vinfo)
                 != 0
@@ -337,19 +337,6 @@ impl X11Client {
         Ok(())
     }
 
-    /// Unmap (hide) a window
-    ///
-    /// # Errors  
-    /// Returns `PointlessError::X11OperationFailed` if unmapping fails
-    pub fn unmap_window(&self, window: u64) -> Result<()> {
-        use x11::xlib::{XFlush, XUnmapWindow};
-
-        unsafe {
-            XUnmapWindow(self.display, window);
-            XFlush(self.display);
-        }
-        Ok(())
-    }
 
     /// Destroy a window and release its resources
     pub fn destroy_window(&self, window: u64) {
