@@ -48,7 +48,7 @@ pub struct Config {
 
 impl Config {
     /// Parse color string as RGB hex value
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::InvalidColorFormat` if color string is not a valid hex value
     pub fn color_rgb(&self) -> crate::error::Result<u32> {
@@ -61,7 +61,7 @@ impl Config {
     }
 
     /// Validate all configuration parameters
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::InvalidColorFormat` for invalid color format,
     /// `PointlessError::InvalidGridDensity` for invalid density values,

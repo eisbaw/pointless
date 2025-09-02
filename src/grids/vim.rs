@@ -32,6 +32,7 @@ impl Default for VimGrid {
 }
 
 impl VimGrid {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             current_cursor: ScreenCoord { x: 0, y: 0 },

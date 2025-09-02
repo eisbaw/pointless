@@ -36,6 +36,9 @@ pub enum PointlessError {
 
     #[error("Invalid opacity: {opacity}. Must be between 0.0 and 1.0")]
     InvalidOpacity { opacity: f32 },
+
+    #[error("Invalid coordinate: {0}")]
+    InvalidCoordinate(String),
 }
 
 pub type Result<T> = std::result::Result<T, PointlessError>;

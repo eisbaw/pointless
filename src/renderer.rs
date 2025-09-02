@@ -24,6 +24,7 @@ impl Default for Renderer {
 }
 
 impl Renderer {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             overlay_window: None,
@@ -33,7 +34,7 @@ impl Renderer {
     }
 
     /// Create X11 overlay window for grid rendering
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::RenderingFailed` if X11 overlay window creation fails
     pub fn create_overlay(&mut self, x11_client: &X11Client, config: &Config) -> Result<()> {
@@ -97,7 +98,7 @@ impl Renderer {
     }
 
     /// Show the overlay window
-    /// 
+    ///
     /// # Errors
     /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn show_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
@@ -114,7 +115,7 @@ impl Renderer {
     }
 
     /// Hide the overlay window
-    /// 
+    ///
     /// # Errors
     /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn hide_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
@@ -131,7 +132,7 @@ impl Renderer {
     }
 
     /// Draw grid cells on the overlay window
-    /// 
+    ///
     /// # Errors
     /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn draw_grid(&mut self, x11_client: &X11Client, cells: &[GridCell]) -> Result<()> {
@@ -176,6 +177,7 @@ impl Renderer {
     }
 
     #[allow(dead_code)]
+    #[must_use]
     pub fn is_visible(&self) -> bool {
         self.is_visible
     }

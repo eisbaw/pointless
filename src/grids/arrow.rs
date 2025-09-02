@@ -23,6 +23,7 @@ impl Default for ArrowGrid {
 }
 
 impl ArrowGrid {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             grid_stack: Vec::new(),

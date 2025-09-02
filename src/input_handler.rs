@@ -25,7 +25,7 @@ pub struct InputHandler {
 
 impl InputHandler {
     /// Create new InputHandler for specified modifier key
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::ModifierKeyNotFound` if the specified modifier key is not available,
     /// or `PointlessError::InvalidKeycode` if the key cannot be converted to a keycode
@@ -72,7 +72,7 @@ impl InputHandler {
     }
 
     /// Start capturing input events for the modifier key
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::KeyGrabFailed` if unable to grab the modifier key for exclusive access
     pub fn start_capture(&mut self, x11_client: &X11Client) -> Result<()> {
@@ -122,6 +122,7 @@ impl InputHandler {
     }
 
     #[allow(dead_code)]
+    #[must_use]
     pub fn is_modifier_pressed(&self) -> bool {
         self.is_modifier_pressed
     }

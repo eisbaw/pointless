@@ -11,7 +11,8 @@ pub struct CoordinateResolver;
 
 impl CoordinateResolver {
     /// Convert grid coordinate to screen coordinate for homogeneous grids
-    pub fn grid_to_screen_homogeneous(
+    #[must_use]
+    pub const fn grid_to_screen_homogeneous(
         coord: GridCoord,
         screen: &ScreenInfo,
         density: u32,
@@ -29,7 +30,8 @@ impl CoordinateResolver {
     }
 
     /// Convert grid coordinate to screen coordinate for QWERTY grids
-    pub fn grid_to_screen_qwerty(
+    #[must_use]
+    pub const fn grid_to_screen_qwerty(
         coord: GridCoord,
         screen: &ScreenInfo,
         _density: u32,
@@ -48,7 +50,8 @@ impl CoordinateResolver {
     }
 
     /// Convert grid coordinate to screen coordinate for arrow grids
-    pub fn grid_to_screen_arrow(
+    #[must_use]
+    pub const fn grid_to_screen_arrow(
         coord: GridCoord,
         screen: &ScreenInfo,
         _density: u32,
@@ -67,7 +70,8 @@ impl CoordinateResolver {
     }
 
     /// Convert grid coordinate directly to screen coordinate (for Vim grids that work in screen space)
-    pub fn grid_to_screen_direct(
+    #[must_use]
+    pub const fn grid_to_screen_direct(
         coord: GridCoord,
         _screen: &ScreenInfo,
         _density: u32,

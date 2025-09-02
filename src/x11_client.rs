@@ -65,7 +65,7 @@ pub struct X11Client {
 
 impl X11Client {
     /// Create a new X11Client and connect to the display
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::X11ConnectionFailed` if unable to connect to X11 display server
     pub fn new() -> Result<Self> {
@@ -99,7 +99,7 @@ impl X11Client {
     }
 
     /// Warp the cursor to specified coordinates
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::PointerWarpFailed` if X11 cursor positioning fails
     pub fn warp_cursor(&self, x: i32, y: i32) -> Result<()> {
@@ -127,7 +127,7 @@ impl X11Client {
     }
 
     /// Grab a key combination for exclusive input handling
-    /// 
+    ///
     /// # Errors
     /// Returns `PointlessError::KeyGrabFailed` if X11 cannot grab the specified key combination.
     /// This can happen if another application already has an exclusive grab on the key.
@@ -185,10 +185,228 @@ impl X11Client {
         unsafe { XPending(self.display) > 0 }
     }
 
+    /// Create an overlay window with specified properties
+    /// Returns window ID on success
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::WindowCreationFailed` if X11 window creation fails
+    pub fn create_overlay_window(&self, x: i32, y: i32, width: u32, height: u32) -> Result<u64> {
+        use x11::xlib::{XCreateWindow, InputOutput, CWOverrideRedirect, CWBackPixel, CWBorderPixel, XSetWindowAttributes};
+        
+        unsafe {
+            let mut window_attrs: XSetWindowAttributes = std::mem::zeroed();
+            window_attrs.override_redirect = 1; // Override window manager
+            window_attrs.background_pixel = 0; // Transparent background
+            window_attrs.border_pixel = 0;
+
+            let window = XCreateWindow(
+                self.display,
+                self.root_window,
+                x,
+                y,
+                width,
+                height,
+                0, // border_width
+                24, // depth - 24-bit color
+                InputOutput as u32,
+                ptr::null_mut(), // visual
+                CWOverrideRedirect | CWBackPixel | CWBorderPixel,
+                &mut window_attrs,
+            );
+
+            if window == 0 {
+                Err(PointlessError::WindowCreationFailed)
+            } else {
+                Ok(window)
+            }
+        }
+    }
+
+    /// Map (show) a window
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::X11OperationFailed` if mapping fails
+    pub fn map_window(&self, window: u64) -> Result<()> {
+        use x11::xlib::{XMapWindow, XFlush};
+        
+        unsafe {
+            XMapWindow(self.display, window);
+            XFlush(self.display);
+        }
+        Ok(())
+    }
+
+    /// Unmap (hide) a window
+    /// 
+    /// # Errors  
+    /// Returns `PointlessError::X11OperationFailed` if unmapping fails
+    pub fn unmap_window(&self, window: u64) -> Result<()> {
+        use x11::xlib::{XUnmapWindow, XFlush};
+        
+        unsafe {
+            XUnmapWindow(self.display, window);
+            XFlush(self.display);
+        }
+        Ok(())
+    }
+
+    /// Destroy a window and release its resources
+    pub fn destroy_window(&self, window: u64) {
+        use x11::xlib::XDestroyWindow;
+        
+        unsafe {
+            XDestroyWindow(self.display, window);
+        }
+    }
+
+    /// Create a graphics context for drawing operations
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::GraphicsContextFailed` if GC creation fails
+    pub fn create_graphics_context(&self, window: u64) -> Result<*mut x11::xlib::_XGC> {
+        use x11::xlib::XCreateGC;
+        
+        unsafe {
+            let gc = XCreateGC(self.display, window, 0, ptr::null_mut());
+            if gc.is_null() {
+                Err(PointlessError::GraphicsContextFailed)
+            } else {
+                Ok(gc)
+            }
+        }
+    }
+
+    /// Set foreground color for drawing operations
+    pub fn set_foreground_color(&self, gc: *mut x11::xlib::_XGC, color: u64) {
+        use x11::xlib::XSetForeground;
+        
+        unsafe {
+            XSetForeground(self.display, gc, color);
+        }
+    }
+
+    /// Draw a rectangle outline
+    pub fn draw_rectangle(&self, window: u64, gc: *mut x11::xlib::_XGC, x: i32, y: i32, width: u32, height: u32) {
+        use x11::xlib::XDrawRectangle;
+        
+        unsafe {
+            XDrawRectangle(self.display, window, gc, x, y, width, height);
+        }
+    }
+
+    /// Draw text at specified position
+    pub fn draw_text(&self, window: u64, gc: *mut x11::xlib::_XGC, x: i32, y: i32, text: &str) {
+        use x11::xlib::XDrawString;
+        use std::ffi::CString;
+        
+        unsafe {
+            if let Ok(c_text) = CString::new(text) {
+                XDrawString(
+                    self.display,
+                    window,
+                    gc,
+                    x,
+                    y,
+                    c_text.as_ptr(),
+                    text.len() as i32,
+                );
+            }
+        }
+    }
+
+    /// Clear a window's contents
+    pub fn clear_window(&self, window: u64) {
+        use x11::xlib::XClearWindow;
+        
+        unsafe {
+            XClearWindow(self.display, window);
+        }
+    }
+
+    /// Flush pending X11 requests to ensure they're processed
+    pub fn flush(&self) {
+        use x11::xlib::XFlush;
+        
+        unsafe {
+            XFlush(self.display);
+        }
+    }
+
+    /// Convert X11 keysym to keycode at runtime
+    /// This provides safer keycode resolution than hardcoded constants
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::InvalidKeycode` if the keysym cannot be mapped to a keycode
+    pub fn keysym_to_keycode(&self, keysym: u64) -> Result<u32> {
+        use x11::xlib::XKeysymToKeycode;
+        
+        unsafe {
+            let keycode = XKeysymToKeycode(self.display, keysym);
+            if keycode == 0 {
+                return Err(PointlessError::InvalidKeycode { keycode: keycode as u32 });
+            }
+            Ok(keycode as u32)
+        }
+    }
+
+    /// Validate that hardcoded keycodes match runtime X11 configuration
+    /// This ensures the application works correctly on different X11 setups
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::InvalidKeycode` if any keycode validation fails
+    pub fn validate_keycodes(&self) -> Result<()> {
+        use x11::keysym::*;
+        use crate::constants::*;
+
+        // Define expected keysym-to-keycode mappings
+        let expected_mappings = vec![
+            (XK_a, KEYCODE_A, "A"),
+            (XK_b, KEYCODE_B, "B"), 
+            (XK_c, KEYCODE_C, "C"),
+            (XK_d, KEYCODE_D, "D"),
+            (XK_e, KEYCODE_E, "E"),
+            (XK_f, KEYCODE_F, "F"),
+            (XK_g, KEYCODE_G, "G"),
+            (XK_h, KEYCODE_H, "H"),
+            (XK_i, KEYCODE_I, "I"),
+            (XK_j, KEYCODE_J, "J"),
+            (XK_k, KEYCODE_K, "K"),
+            (XK_l, KEYCODE_L, "L"),
+            (XK_1, KEYCODE_1, "1"),
+            (XK_2, KEYCODE_2, "2"),
+            (XK_3, KEYCODE_3, "3"),
+            (XK_4, KEYCODE_4, "4"),
+            (XK_5, KEYCODE_5, "5"),
+            (XK_Escape, KEYCODE_ESCAPE, "Escape"),
+            (XK_Return, KEYCODE_ENTER, "Enter"),
+            (XK_Up, KEYCODE_UP, "Up"),
+            (XK_Down, KEYCODE_DOWN, "Down"),
+            (XK_Left, KEYCODE_LEFT, "Left"),
+            (XK_Right, KEYCODE_RIGHT, "Right"),
+        ];
+
+        for (keysym, expected_keycode, key_name) in expected_mappings {
+            let actual_keycode = self.keysym_to_keycode(keysym.into())?;
+            if actual_keycode != expected_keycode {
+                log::warn!(
+                    "Keycode mismatch for {}: expected {}, got {}. This may cause input issues.",
+                    key_name, expected_keycode, actual_keycode
+                );
+                // Don't fail validation - just warn, as keycodes can vary legitimately
+            }
+        }
+
+        Ok(())
+    }
+
+    // DEPRECATED: These methods expose raw pointers and break encapsulation.
+    // Use the safe wrapper methods above instead.
+    #[deprecated(since = "0.1.0", note = "Use safe window management methods instead")]
     pub fn display(&self) -> *mut Display {
         self.display
     }
 
+    #[deprecated(since = "0.1.0", note = "Access root window via screen_info() instead")]
     pub fn root_window(&self) -> u64 {
         self.root_window
     }

@@ -19,6 +19,7 @@ impl Default for QwertyGrid {
 }
 
 impl QwertyGrid {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             key_map: HashMap::new(),

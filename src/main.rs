@@ -78,6 +78,15 @@ fn initialize_application_components(
     debug!("Connected to X11 display");
     debug!("Screen info: {:#?}", screen_info);
 
+    // Validate runtime keycode configuration
+    debug!("Validating X11 keycode configuration");
+    if let Err(e) = x11_client.validate_keycodes() {
+        warn!("Keycode validation failed: {}. Input may not work correctly on this X11 configuration.", e);
+        // Continue execution - keycode issues are warnings, not fatal errors
+    } else {
+        debug!("Keycode validation completed successfully");
+    }
+
     info!("Pointless X11 cursor utility initialized");
     info!("Screen: {}x{}", screen_info.width, screen_info.height);
     info!("Grid type: {:?}", config.grid_type);

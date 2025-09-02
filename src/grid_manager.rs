@@ -9,6 +9,7 @@ pub struct GridManager {
 }
 
 impl GridManager {
+    #[must_use]
     pub fn new(grid_type: GridType) -> Self {
         let current_grid: Box<dyn GridLayout> = match grid_type {
             GridType::Homogeneous => Box::new(HomogeneousGrid::new()),
@@ -23,6 +24,7 @@ impl GridManager {
         }
     }
 
+    #[must_use]
     pub fn calculate_grid(&self, screen: &ScreenInfo, density: u32) -> Vec<GridCell> {
         // Always compute fresh - following MPED principle of computing derived state on demand
         self.current_grid.calculate_grid(screen, density)

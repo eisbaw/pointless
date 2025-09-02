@@ -22,6 +22,7 @@ impl Default for HomogeneousGrid {
 }
 
 impl HomogeneousGrid {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             cols: DEFAULT_GRID_SIZE,
