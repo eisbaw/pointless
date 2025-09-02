@@ -36,7 +36,6 @@ use x11::xlib::{
     XSelectInput, XSetErrorHandler, XSync, XUngrabKey, XWarpPointer,
 };
 
-
 // Thread-local error tracking for safer X11 error handling
 thread_local! {
     static X11_ERROR_OCCURRED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -180,7 +179,6 @@ impl X11Client {
     pub fn root_window(&self) -> u64 {
         self.root_window
     }
-
 }
 
 impl Drop for X11Client {
