@@ -47,6 +47,10 @@ pub struct Config {
 }
 
 impl Config {
+    /// Parse color string as RGB hex value
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::InvalidColorFormat` if color string is not a valid hex value
     pub fn color_rgb(&self) -> crate::error::Result<u32> {
         // Parse hex color string to RGB value - fail fast on invalid input
         u32::from_str_radix(&self.color, 16).map_err(|_| {
@@ -56,6 +60,12 @@ impl Config {
         })
     }
 
+    /// Validate all configuration parameters
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::InvalidColorFormat` for invalid color format,
+    /// `PointlessError::InvalidGridDensity` for invalid density values,
+    /// or `PointlessError::InvalidOpacity` for opacity outside 0.0-1.0 range
     pub fn validate(&self) -> crate::error::Result<()> {
         // Validate all configuration parameters
         self.color_rgb()?; // Ensure color is valid

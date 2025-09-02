@@ -64,6 +64,10 @@ pub struct X11Client {
 // X11Error enum removed - using centralized PointlessError instead
 
 impl X11Client {
+    /// Create a new X11Client and connect to the display
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::X11ConnectionFailed` if unable to connect to X11 display server
     pub fn new() -> Result<Self> {
         unsafe {
             let display = XOpenDisplay(ptr::null());
@@ -94,6 +98,10 @@ impl X11Client {
         &self.screen_info
     }
 
+    /// Warp the cursor to specified coordinates
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::PointerWarpFailed` if X11 cursor positioning fails
     pub fn warp_cursor(&self, x: i32, y: i32) -> Result<()> {
         unsafe {
             let result = XWarpPointer(
@@ -118,6 +126,11 @@ impl X11Client {
         }
     }
 
+    /// Grab a key combination for exclusive input handling
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::KeyGrabFailed` if X11 cannot grab the specified key combination.
+    /// This can happen if another application already has an exclusive grab on the key.
     pub fn grab_key(&self, keycode: u32, modifiers: u32) -> Result<()> {
         unsafe {
             // Set up error handler to catch grab failures

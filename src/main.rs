@@ -1,3 +1,6 @@
+// Allow u32->i32 casts in coordinate calculations - safe in X11 display context
+#![allow(clippy::cast_possible_wrap)]
+
 mod config;
 mod constants;
 mod coordinate_resolver;

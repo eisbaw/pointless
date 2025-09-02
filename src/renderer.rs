@@ -32,6 +32,10 @@ impl Renderer {
         }
     }
 
+    /// Create X11 overlay window for grid rendering
+    /// 
+    /// # Errors
+    /// Returns `PointlessError::RenderingFailed` if X11 overlay window creation fails
     pub fn create_overlay(&mut self, x11_client: &X11Client, config: &Config) -> Result<()> {
         // Idempotency guard - avoid creating multiple overlays
         if self.overlay_window.is_some() {
@@ -92,6 +96,10 @@ impl Renderer {
         }
     }
 
+    /// Show the overlay window
+    /// 
+    /// # Errors
+    /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn show_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         if let Some(window) = self.overlay_window {
             if !self.is_visible {
@@ -105,6 +113,10 @@ impl Renderer {
         Ok(())
     }
 
+    /// Hide the overlay window
+    /// 
+    /// # Errors
+    /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn hide_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
         if let Some(window) = self.overlay_window {
             if self.is_visible {
@@ -118,6 +130,10 @@ impl Renderer {
         Ok(())
     }
 
+    /// Draw grid cells on the overlay window
+    /// 
+    /// # Errors
+    /// Currently always returns `Ok(())` but declared as Result for future X11 error handling
     pub fn draw_grid(&mut self, x11_client: &X11Client, cells: &[GridCell]) -> Result<()> {
         if let (Some(window), Some(gc)) = (self.overlay_window, self.gc) {
             unsafe {

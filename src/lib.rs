@@ -11,6 +11,25 @@
 //! - **Data Design**: Minimal state, compute-on-demand, clear data structures
 //! - **UNIX Principles**: Single responsibility, command-line interface, no config files
 //!
+//! ## Safety Note on Integer Casting
+//!
+//! This crate performs extensive `u32` to `i32` casting for coordinate calculations.
+//! This is safe in the X11 context because:
+//! 
+//! 1. **X11 Display Limits**: X11 displays are practically limited to resolutions much smaller 
+//!    than i32::MAX (2,147,483,647). Even 8K displays (7680×4320) are well within this range.
+//! 2. **Grid Coordinate Safety**: Grid coordinates are derived from screen dimensions divided
+//!    by grid density, keeping them even smaller than screen dimensions.
+//! 3. **Platform Reality**: No consumer hardware exists with displays approaching i32::MAX pixels
+//!    in width or height, making overflow impossible in practice.
+//!
+//! The alternative of using i32 throughout would require signed arithmetic checks everywhere,
+//! which contradicts MPED's "fundamentals first" principle by optimizing for theoretical 
+//! rather than practical concerns.
+
+// Allow u32->i32 casts in coordinate calculations - safe in X11 display context
+#![allow(clippy::cast_possible_wrap)]
+
 //! ## Core Modules
 //!
 //! - **grids**: Pluggable grid layout implementations (homogeneous, qwerty, arrow, vim, vision)
