@@ -1,10 +1,7 @@
 [workspace]
 members = [
     "crates/pointless-x11",
-    "crates/pointless-grids", 
-    "crates/pointless-input",
-    "crates/pointless-render",
-    "crates/pointless-app"
+    "crates/pointless-grids"
 ]
 resolver = "2"
 

@@ -1,9 +1,0 @@
-[package]
-name = "pointless-input"
-version = "0.1.0"
-edition = "2021"
-description = "Input handling library for Pointless"
-license = "MIT"
-
-[dependencies]
-pointless-x11 = { path = "../pointless-x11" }

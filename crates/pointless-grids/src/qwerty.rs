@@ -245,10 +245,11 @@ impl GridLayout for QwertyGrid {
     fn process_key(
         &mut self,
         key: KeyCode,
-        screen: &ScreenInfo,
         current_level: u32,
+        screen: &ScreenInfo,
+        density: u32,
     ) -> Option<GridCoord> {
-        self.process_key_with_screen(key, current_level, screen, 4)
+        self.process_key_with_screen(key, current_level, screen, density)
     }
 
     fn name(&self) -> &'static str {

@@ -350,38 +350,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "pointless-app"
-version = "0.1.0"
-dependencies = [
- "log",
- "pointless-grids",
- "pointless-input",
- "pointless-render",
- "pointless-x11",
- "signal-hook",
- "thiserror",
-]
-
-[[package]]
 name = "pointless-grids"
 version = "0.1.0"
 dependencies = [
  "log",
  "opencv",
- "pointless-x11",
-]
-
-[[package]]
-name = "pointless-input"
-version = "0.1.0"
-dependencies = [
- "pointless-x11",
-]
-
-[[package]]
-name = "pointless-render"
-version = "0.1.0"
-dependencies = [
  "pointless-x11",
 ]
 

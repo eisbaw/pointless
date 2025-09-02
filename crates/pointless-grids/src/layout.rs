@@ -10,8 +10,9 @@ pub trait GridLayout {
     ///
     /// # Arguments
     /// * `key` - X11 keycode from user input
-    /// * `screen` - Current screen dimensions and properties
     /// * `current_level` - Current subdivision level (for hierarchical grids)
+    /// * `screen` - Current screen dimensions and properties
+    /// * `density` - Grid density/subdivision level for calculations
     ///
     /// # Returns
     /// * `Some(GridCoord)` - Target coordinate if key produces valid movement
@@ -19,8 +20,9 @@ pub trait GridLayout {
     fn process_key(
         &mut self,
         key: KeyCode,
-        screen: &ScreenInfo,
         current_level: u32,
+        screen: &ScreenInfo,
+        density: u32,
     ) -> Option<GridCoord>;
 
     /// Get human-readable name for this grid type

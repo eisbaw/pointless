@@ -93,8 +93,9 @@ impl GridLayout for RectangleGrid {
     fn process_key(
         &mut self,
         key: KeyCode,
-        _screen: &ScreenInfo,
         _current_level: u32,
+        _screen: &ScreenInfo,
+        _density: u32,
     ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
