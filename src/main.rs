@@ -4,6 +4,7 @@
 mod config;
 mod constants;
 mod coordinate_resolver;
+mod cursor_animator;
 mod error;
 mod grid_manager;
 mod grids;
@@ -15,6 +16,7 @@ mod x11_client;
 
 use clap::Parser;
 use config::Config;
+use cursor_animator::CursorAnimator;
 use grid_manager::GridManager;
 use input_handler::{InputEvent, InputHandler};
 use log::{debug, error, info, warn};
@@ -32,6 +34,7 @@ struct ApplicationState {
     input_handler: InputHandler,
     renderer: Renderer,
     grid_manager: GridManager,
+    cursor_animator: CursorAnimator,
     screen_info: ScreenInfo,
 }
 
@@ -166,12 +169,16 @@ fn initialize_application_components(
         }
     );
 
+    // Initialize cursor animator with the selected move style
+    let cursor_animator = CursorAnimator::new(config.movestyle.clone());
+
     Ok(ApplicationState {
         config,
         x11_client,
         input_handler,
         renderer,
         grid_manager,
+        cursor_animator,
         screen_info,
     })
 }
@@ -311,18 +318,18 @@ fn handle_input_event(
         InputEvent::NavigationKey(keycode) => {
             debug!("Navigation key pressed: {}", keycode);
 
-            // Process navigation and move cursor
+            // Process navigation and move cursor with animation
             if let Some(target_pos) = app_state.grid_manager.process_key(
                 keycode,
                 &app_state.screen_info,
                 app_state.config.grid_density,
             ) {
-                if let Err(e) = app_state.x11_client.warp_cursor(target_pos.x, target_pos.y) {
+                if let Err(e) = app_state.cursor_animator.animate_move(&app_state.x11_client, target_pos) {
                     error!(
                         "Critical cursor movement failure: {} - target was ({}, {})",
                         e, target_pos.x, target_pos.y
                     );
-                    return Err(Box::new(e));
+                    return Err(e);
                 }
                 debug!("Cursor moved to: ({}, {})", target_pos.x, target_pos.y);
             } else {

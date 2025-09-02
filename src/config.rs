@@ -17,6 +17,15 @@ pub enum ModifierKey {
     Ctrl,
 }
 
+#[derive(Debug, Clone, ValueEnum)]
+#[non_exhaustive]
+pub enum MoveStyle {
+    None,
+    Firetrail,
+    Linefade,
+    Accelerate,
+}
+
 #[derive(Debug, Clone, Parser)]
 #[command(name = "pointless")]
 #[command(about = "A keyboard-driven X11 cursor utility that makes pointing devices pointless")]
@@ -48,6 +57,10 @@ pub struct Config {
     /// Always show grid (ignore modifier key) - for testing
     #[arg(long, default_value_t = false)]
     pub always_show: bool,
+
+    /// Cursor movement animation style
+    #[arg(long, default_value = "none")]
+    pub movestyle: MoveStyle,
 
     /// Path to PNG output file instead of X11 display
     #[arg(long)]
