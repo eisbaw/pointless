@@ -323,6 +323,7 @@ impl X11Client {
         }
     }
 
+
     /// Map (show) a window
     ///
     /// # Errors

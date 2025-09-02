@@ -235,7 +235,7 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
         debug!("Generated {} grid cells for always-show mode", cells.len());
 
         // Show overlay FIRST (creates window), then draw
-        app_state.renderer.show_overlay(&app_state.x11_client)?;
+        app_state.renderer.show_overlay(&app_state.x11_client, &app_state.config)?;
         app_state
             .renderer
             .draw_grid(&app_state.x11_client, &cells)?;
@@ -301,7 +301,7 @@ fn handle_input_event(
 
             // Show overlay FIRST (creates window), then draw
             debug!("Showing overlay");
-            app_state.renderer.show_overlay(&app_state.x11_client)?;
+            app_state.renderer.show_overlay(&app_state.x11_client, &app_state.config)?;
             debug!("Drawing grid");
             app_state
                 .renderer

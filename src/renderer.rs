@@ -46,18 +46,19 @@ impl Renderer {
     ///
     /// # Errors
     /// Returns error if window creation or mapping fails
-    pub fn show_overlay(&mut self, x11_client: &X11Client) -> Result<()> {
+    pub fn show_overlay(&mut self, x11_client: &X11Client, config: &Config) -> Result<()> {
         // Always create a fresh window like the working demo
         let screen_info = x11_client.screen_info();
         let overlay_window =
             x11_client.create_overlay_window(0, 0, screen_info.width, screen_info.height)?;
         let gc = x11_client.create_graphics_context(overlay_window)?;
 
-        // Set yellow color like working demo
+        // Set color from config
+        let color = config.color_rgb()?;
         unsafe {
-            x11_client.set_foreground_color(gc, 0xFFFF00);
+            x11_client.set_foreground_color(gc, color as u64);
         }
-
+        
         // Map window immediately like working demo
         x11_client.map_window(overlay_window)?;
         unsafe {
