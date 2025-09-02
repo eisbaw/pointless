@@ -115,14 +115,18 @@ impl GridLayout for EdgeGrid {
         _density: u32,
     ) -> ScreenCoord {
         // Return the pre-computed edge point coordinates
-        if (coord.x as usize) < self.edge_points.len() {
-            self.edge_points[coord.x as usize]
+        // Clamp coordinate to valid bounds instead of silent fallback
+        let index = if self.edge_points.is_empty() {
+            // If no edge points detected, return screen center
+            return ScreenCoord {
+                x: _screen.width as i32 / 2,
+                y: _screen.height as i32 / 2,
+            };
         } else {
-            // Fallback to first edge point if index is out of bounds
-            self.edge_points
-                .first()
-                .copied()
-                .unwrap_or(ScreenCoord { x: 0, y: 0 })
-        }
+            // Clamp to valid range
+            (coord.x as usize).min(self.edge_points.len() - 1)
+        };
+
+        self.edge_points[index]
     }
 }

@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum PointlessError {
     #[error("X11 connection failed")]
     X11ConnectionFailed,

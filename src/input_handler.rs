@@ -9,6 +9,7 @@ use x11::xlib::{
 };
 
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum InputEvent {
     ModifierPressed,
     ModifierReleased,

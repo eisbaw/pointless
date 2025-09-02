@@ -3,6 +3,7 @@ use thiserror::Error;
 pub type X11Result<T> = Result<T, X11Error>;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum X11Error {
     #[error("Failed to connect to X11 display")]
     ConnectionFailed,

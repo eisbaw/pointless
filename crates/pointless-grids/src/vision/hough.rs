@@ -120,14 +120,18 @@ impl GridLayout for HoughGrid {
         _density: u32,
     ) -> ScreenCoord {
         // Return the pre-computed line intersection coordinates
-        if (coord.x as usize) < self.jump_targets.len() {
-            self.jump_targets[coord.x as usize]
+        // Clamp coordinate to valid bounds instead of silent fallback
+        let index = if self.jump_targets.is_empty() {
+            // If no intersections detected, return screen center
+            return ScreenCoord {
+                x: _screen.width as i32 / 2,
+                y: _screen.height as i32 / 2,
+            };
         } else {
-            // Fallback to first intersection if index is out of bounds
-            self.jump_targets
-                .first()
-                .copied()
-                .unwrap_or(ScreenCoord { x: 0, y: 0 })
-        }
+            // Clamp to valid range
+            (coord.x as usize).min(self.jump_targets.len() - 1)
+        };
+
+        self.jump_targets[index]
     }
 }

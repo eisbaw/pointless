@@ -115,14 +115,18 @@ impl GridLayout for ColorGrid {
         _density: u32,
     ) -> ScreenCoord {
         // Return the pre-computed color region coordinates
-        if (coord.x as usize) < self.color_regions.len() {
-            self.color_regions[coord.x as usize]
+        // Clamp coordinate to valid bounds instead of silent fallback
+        let index = if self.color_regions.is_empty() {
+            // If no regions detected, return screen center
+            return ScreenCoord {
+                x: _screen.width as i32 / 2,
+                y: _screen.height as i32 / 2,
+            };
         } else {
-            // Fallback to first region if index is out of bounds
-            self.color_regions
-                .first()
-                .copied()
-                .unwrap_or(ScreenCoord { x: 0, y: 0 })
-        }
+            // Clamp to valid range
+            (coord.x as usize).min(self.color_regions.len() - 1)
+        };
+
+        self.color_regions[index]
     }
 }

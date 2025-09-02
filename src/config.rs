@@ -1,6 +1,7 @@
 use clap::{Parser, ValueEnum};
 
 #[derive(Debug, Clone, ValueEnum)]
+#[non_exhaustive]
 pub enum GridType {
     Homogeneous,
     Qwerty,
@@ -19,6 +20,7 @@ pub enum GridType {
 }
 
 #[derive(Debug, Clone, ValueEnum)]
+#[non_exhaustive]
 pub enum ModifierKey {
     Super,
     Alt,

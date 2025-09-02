@@ -115,14 +115,18 @@ impl GridLayout for RectangleGrid {
         _density: u32,
     ) -> ScreenCoord {
         // Return the pre-computed rectangle center coordinates
-        if (coord.x as usize) < self.rectangles.len() {
-            self.rectangles[coord.x as usize]
+        // Clamp coordinate to valid bounds instead of silent fallback
+        let index = if self.rectangles.is_empty() {
+            // If no rectangles detected, return screen center
+            return ScreenCoord {
+                x: _screen.width as i32 / 2,
+                y: _screen.height as i32 / 2,
+            };
         } else {
-            // Fallback to first rectangle center if index is out of bounds
-            self.rectangles
-                .first()
-                .copied()
-                .unwrap_or(ScreenCoord { x: 0, y: 0 })
-        }
+            // Clamp to valid range
+            (coord.x as usize).min(self.rectangles.len() - 1)
+        };
+
+        self.rectangles[index]
     }
 }
