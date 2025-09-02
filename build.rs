@@ -28,5 +28,15 @@ fn main() {
         )
     });
 
+    Config::new().probe("xfixes").unwrap_or_else(|e| {
+        panic!(
+            "XFixes development libraries not found: {}.\nRun: nix develop",
+            e
+        )
+    });
+
+    // Explicitly link XFixes for the overlay demo
+    println!("cargo:rustc-link-lib=Xfixes");
+    
     println!("cargo:rerun-if-changed=build.rs");
 }

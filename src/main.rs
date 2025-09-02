@@ -218,12 +218,32 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
     let running = Arc::new(AtomicBool::new(true));
     setup_signal_handling(running.clone());
 
+    // If always_show is enabled, show the grid immediately
+    if app_state.config.always_show {
+        debug!("Always-show mode enabled - displaying grid immediately");
+        
+        let cells = app_state
+            .grid_manager
+            .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
+        debug!("Generated {} grid cells for always-show mode", cells.len());
+        
+        // Show overlay FIRST (creates window), then draw
+        app_state.renderer.show_overlay(&app_state.x11_client)?;
+        app_state
+            .renderer
+            .draw_grid(&app_state.x11_client, &cells)?;
+        debug!("Grid shown in always-show mode");
+    }
+
     // Main event loop with graceful shutdown
     while running.load(Ordering::Relaxed) {
         let event = app_state.x11_client.next_event();
-        let input_event = app_state.input_handler.process_event(&event);
-
-        handle_input_event(input_event, &mut app_state)?;
+        
+        // In always-show mode, ignore input events and just keep running
+        if !app_state.config.always_show {
+            let input_event = app_state.input_handler.process_event(&event);
+            handle_input_event(input_event, &mut app_state)?;
+        }
     }
 
     // Proper cleanup on shutdown
@@ -259,10 +279,20 @@ fn handle_input_event(
             let cells = app_state
                 .grid_manager
                 .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
+            debug!("Generated {} grid cells", cells.len());
+            if !cells.is_empty() {
+                debug!("First cell: {:?}", cells[0]);
+                debug!("Last cell: {:?}", cells[cells.len() - 1]);
+            }
+            
+            // Show overlay FIRST (creates window), then draw
+            debug!("Showing overlay");
+            app_state.renderer.show_overlay(&app_state.x11_client)?;
+            debug!("Drawing grid");
             app_state
                 .renderer
                 .draw_grid(&app_state.x11_client, &cells)?;
-            app_state.renderer.show_overlay(&app_state.x11_client)?;
+            debug!("Overlay shown");
         }
         InputEvent::ModifierReleased => {
             debug!("Modifier key released - hiding grid");

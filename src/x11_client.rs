@@ -59,6 +59,9 @@ pub struct X11Client {
     display: *mut Display,
     root_window: u64,
     screen_info: ScreenInfo,
+    visual: *mut x11::xlib::Visual,
+    colormap: u64,
+    depth: i32,
 }
 
 // X11Error enum removed - using centralized PointlessError instead
@@ -86,16 +89,51 @@ impl X11Client {
                 root_window,
             };
 
+            // Find 32-bit ARGB visual for transparency
+            let mut vinfo: x11::xlib::XVisualInfo = std::mem::zeroed();
+            let mut visual = ptr::null_mut();
+            let mut colormap = 0;
+            let mut depth = 24;
+
+            if x11::xlib::XMatchVisualInfo(display, screen, 32, x11::xlib::TrueColor, &mut vinfo) != 0 {
+                visual = vinfo.visual;
+                depth = vinfo.depth;
+                colormap = x11::xlib::XCreateColormap(display, root_window, visual, x11::xlib::AllocNone);
+                log::debug!("Found 32-bit ARGB visual for transparency");
+            } else if x11::xlib::XMatchVisualInfo(display, screen, 24, x11::xlib::TrueColor, &mut vinfo) != 0 {
+                visual = vinfo.visual;
+                depth = vinfo.depth;
+                colormap = x11::xlib::XCreateColormap(display, root_window, visual, x11::xlib::AllocNone);
+                log::debug!("Fallback to 24-bit visual");
+            } else {
+                // Use default visual as last resort
+                visual = x11::xlib::XDefaultVisual(display, screen);
+                depth = x11::xlib::XDefaultDepth(display, screen);
+                colormap = x11::xlib::XDefaultColormap(display, screen);
+                log::warn!("Using default visual - transparency may not work");
+            }
+
             Ok(X11Client {
                 display,
                 root_window,
                 screen_info,
+                visual,
+                colormap,
+                depth,
             })
         }
     }
 
     pub fn screen_info(&self) -> &ScreenInfo {
         &self.screen_info
+    }
+
+    /// Get the raw display pointer for direct X11 operations
+    /// 
+    /// # Safety
+    /// The caller must ensure the display pointer is used correctly and not freed
+    pub fn display_ptr(&self) -> *mut Display {
+        self.display
     }
 
     /// Warp the cursor to specified coordinates
@@ -192,14 +230,16 @@ impl X11Client {
     /// Returns `PointlessError::WindowCreationFailed` if X11 window creation fails
     pub fn create_overlay_window(&self, x: i32, y: i32, width: u32, height: u32) -> Result<u64> {
         use x11::xlib::{
-            CWBackPixel, CWBorderPixel, CWOverrideRedirect, InputOutput, XCreateWindow,
-            XSetWindowAttributes,
+            CWBackPixel, CWBorderPixel, CWColormap, CWOverrideRedirect, InputOutput, XCreateWindow,
+            XSetWindowAttributes, XMapWindow, XRaiseWindow,
         };
+
 
         unsafe {
             let mut window_attrs: XSetWindowAttributes = std::mem::zeroed();
-            window_attrs.override_redirect = 1; // Override window manager
+            window_attrs.override_redirect = x11::xlib::True; // Override window manager  
             window_attrs.background_pixel = 0; // Transparent background
+            window_attrs.colormap = self.colormap; // Use the ARGB colormap
             window_attrs.border_pixel = 0;
 
             let window = XCreateWindow(
@@ -210,16 +250,21 @@ impl X11Client {
                 width,
                 height,
                 0,  // border_width
-                24, // depth - 24-bit color
+                self.depth, // Use the visual's depth
                 InputOutput as u32,
-                ptr::null_mut(), // visual
-                CWOverrideRedirect | CWBackPixel | CWBorderPixel,
+                self.visual, // Use the ARGB visual
+                CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWColormap,
                 &mut window_attrs,
             );
 
             if window == 0 {
                 Err(PointlessError::WindowCreationFailed)
             } else {
+                // Don't map window immediately - let renderer control visibility
+                
+                // Skip input passthrough for now - focus on getting visual overlay working
+                
+                log::debug!("Created overlay window with ARGB visual: depth={}, window={}", self.depth, window);
                 Ok(window)
             }
         }
@@ -267,13 +312,15 @@ impl X11Client {
     /// # Errors
     /// Returns `PointlessError::GraphicsContextFailed` if GC creation fails
     pub fn create_graphics_context(&self, window: u64) -> Result<*mut x11::xlib::_XGC> {
-        use x11::xlib::XCreateGC;
+        use x11::xlib::{XCreateGC, XSetLineAttributes, LineSolid, CapButt, JoinMiter};
 
         unsafe {
             let gc = XCreateGC(self.display, window, 0, ptr::null_mut());
             if gc.is_null() {
                 Err(PointlessError::GraphicsContextFailed)
             } else {
+                // Set line attributes like the working demo (2 pixel width)
+                XSetLineAttributes(self.display, gc, 2, LineSolid, CapButt, JoinMiter);
                 Ok(gc)
             }
         }
@@ -287,10 +334,26 @@ impl X11Client {
     /// - `gc` has not been freed or invalidated
     /// - The graphics context is associated with the current X11 display
     pub unsafe fn set_foreground_color(&self, gc: *mut x11::xlib::_XGC, color: u64) {
-        use x11::xlib::XSetForeground;
+        use x11::xlib::{XAllocColor, XColor, XSetForeground};
 
         unsafe {
-            XSetForeground(self.display, gc, color);
+            // Use our ARGB colormap for proper color allocation
+            let mut color_struct: XColor = std::mem::zeroed();
+            // Convert RGB to X11 color format (16-bit per channel)
+            color_struct.red = (((color >> 16) & 0xFF) << 8) as u16;
+            color_struct.green = (((color >> 8) & 0xFF) << 8) as u16;
+            color_struct.blue = ((color & 0xFF) << 8) as u16;
+
+            // Allocate the color using our ARGB colormap
+            if XAllocColor(self.display, self.colormap, &mut color_struct) != 0 {
+                XSetForeground(self.display, gc, color_struct.pixel);
+                log::debug!("Color allocated successfully with ARGB colormap: RGB({}, {}, {}) -> pixel {}", 
+                           color_struct.red >> 8, color_struct.green >> 8, color_struct.blue >> 8, color_struct.pixel);
+            } else {
+                // Fallback to white if color allocation fails
+                log::warn!("Color allocation failed for RGB({:#06X}), falling back to white", color);
+                XSetForeground(self.display, gc, 0xFFFFFF);
+            }
         }
     }
 
@@ -315,6 +378,29 @@ impl X11Client {
 
         unsafe {
             XDrawRectangle(self.display, window, gc, x, y, width, height);
+        }
+    }
+
+    /// Draw a line - like the working demo
+    ///
+    /// # Safety
+    /// The caller must ensure that:
+    /// - `gc` is a valid graphics context pointer created by `create_graphics_context`
+    /// - `window` is a valid window ID that exists on the current display
+    /// - `gc` has not been freed or invalidated
+    pub unsafe fn draw_line(
+        &self,
+        window: u64,
+        gc: *mut x11::xlib::_XGC,
+        x1: i32,
+        y1: i32,
+        x2: i32,
+        y2: i32,
+    ) {
+        use x11::xlib::XDrawLine;
+
+        unsafe {
+            XDrawLine(self.display, window, gc, x1, y1, x2, y2);
         }
     }
 
@@ -364,10 +450,11 @@ impl X11Client {
 
     /// Flush pending X11 requests to ensure they're processed
     pub fn flush(&self) {
-        use x11::xlib::XFlush;
+        use x11::xlib::{XFlush, XSync};
 
         unsafe {
             XFlush(self.display);
+            XSync(self.display, 0); // Force synchronization like working demo
         }
     }
 

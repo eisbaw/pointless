@@ -45,6 +45,10 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub debug: bool,
 
+    /// Always show grid (ignore modifier key) - for testing
+    #[arg(long, default_value_t = false)]
+    pub always_show: bool,
+
     /// Path to PNG output file instead of X11 display
     #[arg(long)]
     pub png_output: Option<String>,

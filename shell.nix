@@ -13,6 +13,7 @@ pkgs.mkShell {
     xorg.libX11.dev
     xorg.libXext.dev
     xorg.libXi.dev
+    xorg.libXfixes.dev
     
     # Build tools
     pkg-config
@@ -33,5 +34,5 @@ pkgs.mkShell {
   '';
 
   # Set environment variables for X11 development
-  PKG_CONFIG_PATH = "${pkgs.xorg.libX11.dev}/lib/pkgconfig:${pkgs.xorg.libXext.dev}/lib/pkgconfig:${pkgs.xorg.libXi.dev}/lib/pkgconfig";
+  PKG_CONFIG_PATH = "${pkgs.xorg.libX11.dev}/lib/pkgconfig:${pkgs.xorg.libXext.dev}/lib/pkgconfig:${pkgs.xorg.libXi.dev}/lib/pkgconfig:${pkgs.xorg.libXfixes.dev}/lib/pkgconfig";
 }
