@@ -118,7 +118,7 @@ mod tests {
             let result2 = grid.process_key_with_screen(KEYCODE_1, 0, &screen, 4);
             assert!(result2.is_some());
 
-            let coord = result2.unwrap();
+            let coord = result2.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.x, 0); // Column A = 0
             assert_eq!(coord.y, 0); // Row 1 = 0
         }
@@ -169,7 +169,7 @@ mod tests {
             let result = grid.process_key_with_screen(KEYCODE_Q, 0, &screen, 4);
             assert!(result.is_some());
 
-            let coord = result.unwrap();
+            let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.x, 0); // First column
             assert_eq!(coord.y, 0); // First row
         }
@@ -219,13 +219,13 @@ mod tests {
             // Move up
             let result = grid.process_key_with_screen(KEYCODE_UP, 0, &screen, 4);
             assert!(result.is_some());
-            let coord = result.unwrap();
+            let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.y, 0); // Moved from 1 to 0
 
             // Move left
             let result = grid.process_key_with_screen(KEYCODE_LEFT, 0, &screen, 4);
             assert!(result.is_some());
-            let coord = result.unwrap();
+            let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.x, 0); // Moved from 1 to 0
         }
 
@@ -241,7 +241,7 @@ mod tests {
             // Try to move further up (should stay at boundary)
             let result = grid.process_key_with_screen(KEYCODE_UP, 0, &screen, 4);
             assert!(result.is_some());
-            let coord = result.unwrap();
+            let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.y, 0); // Should stay at 0
         }
     }
@@ -296,7 +296,7 @@ mod tests {
             // Test jump to left edge with '0'
             let result = grid.process_key_with_screen(KEYCODE_0, 0, &screen, 4);
             assert!(result.is_some());
-            let coord = result.unwrap();
+            let coord = result.expect("Expected coordinate after valid navigation");
             assert_eq!(coord.x, 0); // Should be at left edge
         }
 
