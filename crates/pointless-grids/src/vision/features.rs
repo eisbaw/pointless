@@ -108,4 +108,22 @@ impl GridLayout for FeatureGrid {
     }
 
     fn reset(&mut self) {}
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
+        // Return the pre-computed feature point coordinates
+        if (coord.x as usize) < self.features.len() {
+            self.features[coord.x as usize]
+        } else {
+            // Fallback to first feature point if index is out of bounds
+            self.features
+                .first()
+                .copied()
+                .unwrap_or(ScreenCoord { x: 0, y: 0 })
+        }
+    }
 }

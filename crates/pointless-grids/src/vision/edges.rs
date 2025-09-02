@@ -107,4 +107,22 @@ impl GridLayout for EdgeGrid {
     }
 
     fn reset(&mut self) {}
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
+        // Return the pre-computed edge point coordinates
+        if (coord.x as usize) < self.edge_points.len() {
+            self.edge_points[coord.x as usize]
+        } else {
+            // Fallback to first edge point if index is out of bounds
+            self.edge_points
+                .first()
+                .copied()
+                .unwrap_or(ScreenCoord { x: 0, y: 0 })
+        }
+    }
 }

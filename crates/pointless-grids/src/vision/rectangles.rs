@@ -107,4 +107,22 @@ impl GridLayout for RectangleGrid {
     }
 
     fn reset(&mut self) {}
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
+        // Return the pre-computed rectangle center coordinates
+        if (coord.x as usize) < self.rectangles.len() {
+            self.rectangles[coord.x as usize]
+        } else {
+            // Fallback to first rectangle center if index is out of bounds
+            self.rectangles
+                .first()
+                .copied()
+                .unwrap_or(ScreenCoord { x: 0, y: 0 })
+        }
+    }
 }

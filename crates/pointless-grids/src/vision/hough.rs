@@ -112,4 +112,22 @@ impl GridLayout for HoughGrid {
     fn reset(&mut self) {
         self.last_refresh = std::time::Instant::now();
     }
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> ScreenCoord {
+        // Return the pre-computed line intersection coordinates
+        if (coord.x as usize) < self.jump_targets.len() {
+            self.jump_targets[coord.x as usize]
+        } else {
+            // Fallback to first intersection if index is out of bounds
+            self.jump_targets
+                .first()
+                .copied()
+                .unwrap_or(ScreenCoord { x: 0, y: 0 })
+        }
+    }
 }
