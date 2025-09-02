@@ -1,5 +1,5 @@
-[2025-09-02T00:15:49Z DEBUG pointless] Debug mode enabled
-[2025-09-02T00:15:49Z DEBUG pointless] Configuration: Config {
+[2025-09-02T01:09:17Z DEBUG pointless] Debug mode enabled
+[2025-09-02T01:09:17Z DEBUG pointless] Configuration: Config {
         grid_type: Homogeneous,
         modifier_key: Super,
         grid_density: 3,
@@ -7,19 +7,21 @@
         opacity: 0.8,
         debug: true,
     }
-[2025-09-02T00:15:49Z DEBUG pointless] Connected to X11 display
-[2025-09-02T00:15:49Z DEBUG pointless] Screen info: ScreenInfo {
+[2025-09-02T01:09:17Z DEBUG pointless] Connected to X11 display
+[2025-09-02T01:09:17Z DEBUG pointless] Screen info: ScreenInfo {
         width: 1024,
         height: 768,
         root_window: 560,
     }
-[2025-09-02T00:15:49Z INFO  pointless] Pointless X11 cursor utility initialized
-[2025-09-02T00:15:49Z INFO  pointless] Screen: 1024x768
-[2025-09-02T00:15:49Z INFO  pointless] Grid type: Homogeneous
-[2025-09-02T00:15:49Z INFO  pointless] Modifier key: Super
-[2025-09-02T00:15:49Z DEBUG pointless] Testing cursor control...
-[2025-09-02T00:15:49Z DEBUG pointless] Cursor moved to center: (512, 384)
-[2025-09-02T00:15:50Z DEBUG pointless] Cursor moved to corner: (100, 100)
-[2025-09-02T00:15:50Z DEBUG pointless] Input handler initialized for modifier key: Super
-[2025-09-02T00:15:50Z DEBUG pointless] Renderer and grid manager initialized
-[2025-09-02T00:15:50Z INFO  pointless] Hold Super/Windows key to show grid, press keys 1-4, Q-R, A-F, Z-V to navigate. Ctrl+C to exit.
+[2025-09-02T01:09:17Z INFO  pointless] Pointless X11 cursor utility initialized
+[2025-09-02T01:09:17Z INFO  pointless] Screen: 1024x768
+[2025-09-02T01:09:17Z INFO  pointless] Grid type: Homogeneous
+[2025-09-02T01:09:17Z INFO  pointless] Modifier key: Super
+[2025-09-02T01:09:17Z DEBUG pointless] Testing cursor control...
+[2025-09-02T01:09:17Z DEBUG pointless] Cursor moved to center: (512, 384)
+[2025-09-02T01:09:18Z DEBUG pointless] Cursor moved to corner: (100, 100)
+[2025-09-02T01:09:18Z DEBUG pointless] Input handler initialized for modifier key: Super
+[2025-09-02T01:09:18Z DEBUG pointless] Renderer and grid manager initialized
+[2025-09-02T01:09:18Z INFO  pointless] Hold Super/Windows key to show grid, press keys 1-4, Q-R, A-F, Z-V to navigate. Ctrl+C to exit.
+XIO:  fatal IO error 4 (Interrupted system call) on X server ":99"
+      after 17 requests (14 known processed) with 0 events remaining.

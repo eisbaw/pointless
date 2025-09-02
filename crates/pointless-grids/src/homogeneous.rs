@@ -277,4 +277,28 @@ impl GridLayout for HomogeneousGrid {
         #[cfg(debug_assertions)]
         self.validate_state_invariants();
     }
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        density: u32,
+    ) -> pointless_x11::ScreenCoord {
+        // If we have a current subdivision region, use it instead of full screen
+        if let Some(region) = &self.current_region {
+            let cell_width = region.width / self.cols;
+            let cell_height = region.height / self.rows;
+            let x = region.x + (coord.x * cell_width) as i32 + (cell_width / 2) as i32;
+            let y = region.y + (coord.y * cell_height) as i32 + (cell_height / 2) as i32;
+            pointless_x11::ScreenCoord::new(x, y)
+        } else {
+            // Full-screen calculation
+            let grid_size = std::cmp::min(density, MAX_GRID_SIZE);
+            let cell_width = screen.width / grid_size;
+            let cell_height = screen.height / grid_size;
+            let x = (coord.x * cell_width) as i32 + (cell_width / 2) as i32;
+            let y = (coord.y * cell_height) as i32 + (cell_height / 2) as i32;
+            pointless_x11::ScreenCoord::new(x, y)
+        }
+    }
 }

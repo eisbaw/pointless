@@ -1,5 +1,5 @@
 use crate::types::{GridCell, GridCoord, KeyCode};
-use pointless_x11::ScreenInfo;
+use pointless_x11::{ScreenCoord, ScreenInfo};
 
 /// Trait for pluggable grid layout implementations
 pub trait GridLayout {
@@ -28,4 +28,12 @@ pub trait GridLayout {
 
     /// Reset navigation state
     fn reset(&mut self);
+
+    /// Convert grid coordinate to screen coordinate efficiently (without full grid calculation)
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        density: u32,
+    ) -> ScreenCoord;
 }

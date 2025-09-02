@@ -207,4 +207,30 @@ impl GridLayout for ArrowGrid {
         self.grid_stack.clear();
         self.current_pos = GridCoord { x: 1, y: 1 };
     }
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        _density: u32,
+    ) -> pointless_x11::ScreenCoord {
+        // Calculate position in the current 3x3 grid level
+        let default_level = GridLevel {
+            center: pointless_x11::ScreenCoord::new(
+                (screen.width / 2) as i32,
+                (screen.height / 2) as i32,
+            ),
+            size: std::cmp::min(screen.width, screen.height) / 3,
+        };
+        let level = self.grid_stack.last().unwrap_or(&default_level);
+
+        // Calculate cell size at this level
+        let cell_size = level.size / 3;
+
+        // Calculate position relative to center
+        let rel_x = (coord.x as i32 - 1) * cell_size as i32;
+        let rel_y = (coord.y as i32 - 1) * cell_size as i32;
+
+        pointless_x11::ScreenCoord::new(level.center.x + rel_x, level.center.y + rel_y)
+    }
 }

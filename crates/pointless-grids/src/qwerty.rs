@@ -260,4 +260,23 @@ impl GridLayout for QwertyGrid {
         self.refinement_level = 0;
         self.key_map.clear();
     }
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        _density: u32,
+    ) -> pointless_x11::ScreenCoord {
+        // For QWERTY grid, use the cell center from the current grid calculation
+        let cells = self.calculate_grid(screen, 4);
+        if let Some(cell) = cells
+            .iter()
+            .find(|c| c.coord.x == coord.x && c.coord.y == coord.y)
+        {
+            cell.center()
+        } else {
+            // Fallback to screen center if coordinate not found
+            pointless_x11::ScreenCoord::new((screen.width / 2) as i32, (screen.height / 2) as i32)
+        }
+    }
 }

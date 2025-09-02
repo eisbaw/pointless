@@ -370,4 +370,18 @@ impl GridLayout for VimGrid {
         self.pending_multiplier = None;
         self.current_cursor = ScreenCoord { x: 0, y: 0 };
     }
+
+    fn grid_to_screen_coord(
+        &self,
+        coord: GridCoord,
+        screen: &ScreenInfo,
+        _density: u32,
+    ) -> pointless_x11::ScreenCoord {
+        // For vim grid, coordinate represents a direct screen position
+        // Convert grid coordinate to screen coordinate based on grid dimensions
+        let screen_x = (coord.x as i32).min(screen.width as i32 - 1).max(0);
+        let screen_y = (coord.y as i32).min(screen.height as i32 - 1).max(0);
+
+        pointless_x11::ScreenCoord::new(screen_x, screen_y)
+    }
 }
