@@ -36,8 +36,6 @@ use x11::xlib::{
     XSelectInput, XSetErrorHandler, XSync, XUngrabKey, XWarpPointer,
 };
 
-#[cfg(feature = "vision-grids")]
-use x11::xlib::{XAllPlanes, XDestroyImage, XGetImage, ZPixmap};
 
 // Thread-local error tracking for safer X11 error handling
 thread_local! {
@@ -183,52 +181,6 @@ impl X11Client {
         self.root_window
     }
 
-    #[cfg(feature = "vision-grids")]
-    #[allow(dead_code)]
-    pub fn take_screenshot(&self) -> Result<Vec<u8>> {
-        unsafe {
-            let image = XGetImage(
-                self.display,
-                self.root_window,
-                0,
-                0,
-                self.screen_info.width,
-                self.screen_info.height,
-                XAllPlanes(),
-                ZPixmap,
-            );
-
-            if image.is_null() {
-                return Err(PointlessError::X11ScreenshotFailed);
-            }
-
-            let image_ref = &*image;
-            let data_len = (image_ref.bytes_per_line * image_ref.height) as usize;
-
-            // Validate data length to prevent buffer overruns
-            // Use checked arithmetic to prevent overflow on very large screens
-            let max_expected_size = self
-                .screen_info
-                .width
-                .checked_mul(self.screen_info.height)
-                .and_then(|size| size.checked_mul(4))
-                .map(|size| size as usize)
-                .unwrap_or(usize::MAX);
-
-            if data_len == 0 || data_len > max_expected_size {
-                XDestroyImage(image);
-                return Err(PointlessError::X11ScreenshotFailed);
-            }
-
-            // Use safe slice operations instead of raw pointer arithmetic
-            let src_ptr = image_ref.data as *const u8;
-            let src_slice = std::slice::from_raw_parts(src_ptr, data_len);
-            let screenshot_data = src_slice.to_vec();
-
-            XDestroyImage(image);
-            Ok(screenshot_data)
-        }
-    }
 }
 
 impl Drop for X11Client {

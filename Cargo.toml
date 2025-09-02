@@ -1,11 +1,3 @@
-[workspace]
-members = [
-    "crates/pointless-x11",
-    "crates/pointless-grids"
-]
-resolver = "2"
-
-# Main application package for backwards compatibility
 [package]
 name = "pointless"
 version = "0.1.0"
@@ -18,7 +10,7 @@ repository = "https://github.com/user/pointless"
 name = "pointless"
 path = "src/main.rs"
 
-# Dependencies for the main binary (keep original functionality for compatibility)
+# Dependencies for the main binary
 [dependencies]
 x11 = "2.21"
 clap = { version = "4.4", features = ["derive"] }
@@ -35,10 +27,4 @@ path = "src/lib.rs"
 pkg-config = "0.3"
 
 [features]
-default = ["basic-grids"]
-basic-grids = []
-vision-grids = ["opencv"]
-
-[dependencies.opencv]
-version = "0.92"
-optional = true
+default = []

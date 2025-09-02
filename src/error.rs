@@ -37,15 +37,6 @@ pub enum PointlessError {
     #[error("Invalid opacity: {opacity}. Must be between 0.0 and 1.0")]
     InvalidOpacity { opacity: f32 },
 
-    #[cfg(feature = "vision-grids")]
-    #[error("X11 screenshot capture failed")]
-    #[allow(dead_code)]
-    X11ScreenshotFailed,
-
-    #[cfg(feature = "vision-grids")]
-    #[error("OpenCV processing failed: {message}")]
-    #[allow(dead_code)]
-    OpenCVProcessingFailed { message: String },
 }
 
 pub type Result<T> = std::result::Result<T, PointlessError>;

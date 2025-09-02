@@ -7,16 +7,6 @@ pub enum GridType {
     Qwerty,
     Arrow,
     Vim,
-    #[cfg(feature = "vision-grids")]
-    HoughLines,
-    #[cfg(feature = "vision-grids")]
-    RectangleFitting,
-    #[cfg(feature = "vision-grids")]
-    EdgeDensity,
-    #[cfg(feature = "vision-grids")]
-    ColorClustering,
-    #[cfg(feature = "vision-grids")]
-    FeatureDetection,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
