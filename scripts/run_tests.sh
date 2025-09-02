@@ -129,12 +129,8 @@ run_integration_tests() {
                 return 1
             fi
             
-            # Test vision build if possible
-            if cargo build --release --features vision-grids 2>/dev/null; then
-                log_success "Vision grids build successful"
-            else
-                log_warn "Vision grids build failed (missing dependencies)"
-            fi
+            # Vision grids feature was removed - this build test is no longer needed
+            log_info "Vision grids feature removed from project"
             
             # Test binary help
             if ./target/release/pointless --help >/dev/null 2>&1; then

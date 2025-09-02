@@ -31,7 +31,7 @@
 
 //! ## Core Modules
 //!
-//! - **grids**: Pluggable grid layout implementations (homogeneous, qwerty, arrow, vim, vision)
+//! - **grids**: Pluggable grid layout implementations (homogeneous, qwerty, arrow, vim)
 //! - **x11_client**: Safe X11 wrapper for display connection and cursor control
 //! - **input_handler**: Keyboard input capture and modifier key detection
 //! - **renderer**: Grid overlay rendering with transparency
@@ -46,12 +46,6 @@
 //! - **Arrow**: 3x3 directional navigation
 //! - **Vim**: Vim-style movement commands
 //!
-//! ### Vision Grids (optional, requires `vision-grids` feature)
-//! - **Hough**: Line detection intersection points
-//! - **Rectangle**: UI element detection
-//! - **Edge**: Content-aware positioning  
-//! - **Color**: Color clustering regions
-//! - **Feature**: SIFT/ORB feature detection
 //!
 //! ## Usage
 //!
