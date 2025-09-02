@@ -47,6 +47,7 @@ pub use vim::VimGrid;
 
 use crate::types::{GridCell, GridCoord, KeyCode, ScreenCoord};
 use crate::x11_client::ScreenInfo;
+use std::any::Any;
 
 pub trait GridLayout {
     /// Calculate grid cells for given screen dimensions
@@ -76,6 +77,9 @@ pub trait GridLayout {
         screen: &ScreenInfo,
         density: u32,
     ) -> ScreenCoord;
+
+    /// Allow downcasting to specific grid types
+    fn as_any(&self) -> &dyn Any;
 }
 
 #[cfg(test)]

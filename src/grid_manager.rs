@@ -30,6 +30,22 @@ impl GridManager {
         self.current_grid.calculate_grid(screen, density)
     }
 
+    #[must_use]
+    pub fn calculate_localized_grid(
+        &self,
+        screen: &ScreenInfo,
+        cursor_x: i32,
+        cursor_y: i32,
+    ) -> Vec<GridCell> {
+        // For now, only support localized grids for qwerty
+        if let Some(qwerty_grid) = self.current_grid.as_any().downcast_ref::<QwertyGrid>() {
+            qwerty_grid.calculate_localized_grid(screen, cursor_x, cursor_y)
+        } else {
+            // For other grid types, fall back to regular grid
+            self.calculate_grid(screen, 3)
+        }
+    }
+
     pub fn process_key(
         &mut self,
         key: KeyCode,

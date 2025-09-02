@@ -235,7 +235,9 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
         debug!("Generated {} grid cells for always-show mode", cells.len());
 
         // Show overlay FIRST (creates window), then draw
-        app_state.renderer.show_overlay(&app_state.x11_client, &app_state.config)?;
+        app_state
+            .renderer
+            .show_overlay(&app_state.x11_client, &app_state.config)?;
         app_state
             .renderer
             .draw_grid(&app_state.x11_client, &cells)?;
@@ -281,32 +283,68 @@ fn handle_input_event(
     app_state: &mut ApplicationState,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match input_event {
-        InputEvent::ModifierPressed => {
-            debug!("Modifier key pressed - showing grid");
+        InputEvent::ModifierPressed { shift_held } => {
+            if shift_held {
+                debug!("Modifier+Shift pressed - showing localized grid");
 
-            // Calculate and show grid
-            // Note: Grid calculations are performed on each modifier press rather than cached
-            // because: 1) Basic grids are computationally simple (O(n) where n=density^2)
-            // 2) Vision grids would need different caching strategies when fully implemented
-            // 3) Current performance meets <20ms latency requirement without caching
-            // 4) Caching would add complexity for cache invalidation and memory overhead
-            let cells = app_state
-                .grid_manager
-                .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
-            debug!("Generated {} grid cells", cells.len());
-            if !cells.is_empty() {
-                debug!("First cell: {:?}", cells[0]);
-                debug!("Last cell: {:?}", cells[cells.len() - 1]);
+                // Get current cursor position for localized grid
+                let cursor_pos = match app_state.x11_client.get_cursor_position() {
+                    Ok(pos) => pos,
+                    Err(e) => {
+                        error!("Failed to get cursor position for localized grid: {}", e);
+                        return Ok(());
+                    }
+                };
+
+                let cells = app_state.grid_manager.calculate_localized_grid(
+                    &app_state.screen_info,
+                    cursor_pos.x,
+                    cursor_pos.y,
+                );
+                debug!(
+                    "Generated {} localized grid cells around cursor ({}, {})",
+                    cells.len(),
+                    cursor_pos.x,
+                    cursor_pos.y
+                );
+
+                // Show overlay FIRST (creates window), then draw
+                app_state
+                    .renderer
+                    .show_overlay(&app_state.x11_client, &app_state.config)?;
+                app_state
+                    .renderer
+                    .draw_grid(&app_state.x11_client, &cells)?;
+                debug!("Localized grid shown");
+            } else {
+                debug!("Modifier key pressed - showing full grid");
+
+                // Calculate and show grid
+                // Note: Grid calculations are performed on each modifier press rather than cached
+                // because: 1) Basic grids are computationally simple (O(n) where n=density^2)
+                // 2) Vision grids would need different caching strategies when fully implemented
+                // 3) Current performance meets <20ms latency requirement without caching
+                // 4) Caching would add complexity for cache invalidation and memory overhead
+                let cells = app_state
+                    .grid_manager
+                    .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
+                debug!("Generated {} grid cells", cells.len());
+                if !cells.is_empty() {
+                    debug!("First cell: {:?}", cells[0]);
+                    debug!("Last cell: {:?}", cells[cells.len() - 1]);
+                }
+
+                // Show overlay FIRST (creates window), then draw
+                debug!("Showing overlay");
+                app_state
+                    .renderer
+                    .show_overlay(&app_state.x11_client, &app_state.config)?;
+                debug!("Drawing grid");
+                app_state
+                    .renderer
+                    .draw_grid(&app_state.x11_client, &cells)?;
+                debug!("Overlay shown");
             }
-
-            // Show overlay FIRST (creates window), then draw
-            debug!("Showing overlay");
-            app_state.renderer.show_overlay(&app_state.x11_client, &app_state.config)?;
-            debug!("Drawing grid");
-            app_state
-                .renderer
-                .draw_grid(&app_state.x11_client, &cells)?;
-            debug!("Overlay shown");
         }
         InputEvent::ModifierReleased => {
             debug!("Modifier key released - hiding grid");

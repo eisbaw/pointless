@@ -5,13 +5,13 @@ use crate::x11_client::X11Client;
 use std::ffi::CString;
 use x11::xlib::{
     ControlMask, KeyPress as KEY_PRESS, KeyPressMask, KeyRelease as KEY_RELEASE, KeyReleaseMask,
-    Mod1Mask, Mod4Mask, XEvent, XStringToKeysym,
+    Mod1Mask, Mod4Mask, ShiftMask, XEvent, XStringToKeysym,
 };
 
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum InputEvent {
-    ModifierPressed,
+    ModifierPressed { shift_held: bool },
     ModifierReleased,
     NavigationKey(KeyCode),
     Unknown,
@@ -95,8 +95,16 @@ impl InputHandler {
 
                     if keycode == self.modifier_keycode {
                         self.is_modifier_pressed = true;
-                        return InputEvent::ModifierPressed;
+                        // Check if Shift is currently pressed using X11 modifier state
+                        let shift_held = (key_event.state & ShiftMask) != 0;
+                        return InputEvent::ModifierPressed { shift_held };
                     } else if self.is_modifier_pressed {
+                        // Check if this is a Shift key press while modifier is held
+                        if keycode == 50 || keycode == 62 {
+                            // Shift_L or Shift_R
+                            // Modifier is already held, now Shift is pressed - show localized grid
+                            return InputEvent::ModifierPressed { shift_held: true };
+                        }
                         // Navigation key pressed while modifier is held
                         return InputEvent::NavigationKey(keycode);
                     }
@@ -108,6 +116,9 @@ impl InputHandler {
                     if keycode == self.modifier_keycode {
                         self.is_modifier_pressed = false;
                         return InputEvent::ModifierReleased;
+                    } else if self.is_modifier_pressed && (keycode == 50 || keycode == 62) {
+                        // Shift released while modifier still held - switch back to full grid
+                        return InputEvent::ModifierPressed { shift_held: false };
                     }
                 }
                 _ => {}

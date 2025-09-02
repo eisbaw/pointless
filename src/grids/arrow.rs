@@ -218,4 +218,8 @@ impl GridLayout for ArrowGrid {
             CoordinateResolver::grid_to_screen_arrow(coord, screen, density)
         }
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

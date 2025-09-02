@@ -278,4 +278,8 @@ impl GridLayout for HomogeneousGrid {
         log::debug!("Using absolute screen coordinate calculation");
         CoordinateResolver::grid_to_screen_homogeneous(coord, screen, density)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

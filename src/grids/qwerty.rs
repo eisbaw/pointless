@@ -98,6 +98,53 @@ impl QwertyGrid {
         }
         None
     }
+
+    /// Calculate a localized qwerty grid centered around the current cursor position
+    pub fn calculate_localized_grid(
+        &self,
+        screen: &ScreenInfo,
+        cursor_x: i32,
+        cursor_y: i32,
+    ) -> Vec<GridCell> {
+        // Define a smaller region around the cursor (e.g., 400x300 pixels)
+        let local_width = 400u32;
+        let local_height = 300u32;
+
+        // Center the local region on the cursor, but keep it within screen bounds
+        // Ensure the region is always exactly local_width x local_height
+        let half_width = local_width as i32 / 2;
+        let half_height = local_height as i32 / 2;
+
+        let local_x = (cursor_x - half_width)
+            .max(0)
+            .min((screen.width as i32).saturating_sub(local_width as i32));
+        let local_y = (cursor_y - half_height)
+            .max(0)
+            .min((screen.height as i32).saturating_sub(local_height as i32));
+
+        let local_region = Rectangle::new(local_x, local_y, local_width, local_height);
+
+        log::debug!(
+            "Creating localized qwerty grid: {}x{} at ({}, {}) around cursor ({}, {})",
+            local_width,
+            local_height,
+            local_x,
+            local_y,
+            cursor_x,
+            cursor_y
+        );
+
+        // Temporarily set the selected region to the local area
+        let local_grid = QwertyGrid {
+            selected_region: Some(local_region),
+            key_map: HashMap::new(),
+            refinement_level: 0,
+            max_refinements: 3,
+        };
+
+        // Calculate grid using the local region
+        local_grid.calculate_grid(screen, 0) // density not used for qwerty
+    }
 }
 
 impl GridLayout for QwertyGrid {
@@ -288,8 +335,8 @@ impl GridLayout for QwertyGrid {
                     let center_x = rect_x + (col_width / 2) as i32;
                     let center_y = rect_y + (row_height / 2) as i32;
 
-                    log::debug!("QWERTY box center: grid({}, {}) -> screen({}, {}) [full_screen_box={}x{}+{}+{}]", 
-                               coord.x, coord.y, center_x, center_y, 
+                    log::debug!("QWERTY box center: grid({}, {}) -> screen({}, {}) [full_screen_box={}x{}+{}+{}]",
+                               coord.x, coord.y, center_x, center_y,
                                col_width, row_height, rect_x, rect_y);
 
                     return ScreenCoord {
@@ -307,5 +354,9 @@ impl GridLayout for QwertyGrid {
             coord.y
         );
         ScreenCoord { x: 0, y: 0 }
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

@@ -333,6 +333,10 @@ impl GridLayout for VimGrid {
         // Vim grids already work in screen coordinate space
         CoordinateResolver::grid_to_screen_direct(coord, screen, density)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl VimGrid {
