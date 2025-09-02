@@ -98,7 +98,13 @@ impl GridLayout for HoughGrid {
             .collect()
     }
 
-    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        _current_level: u32,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
             y: 0,
@@ -204,7 +210,13 @@ impl GridLayout for RectangleGrid {
             .collect()
     }
 
-    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        _current_level: u32,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
             y: 0,
@@ -301,7 +313,13 @@ impl GridLayout for EdgeGrid {
             .collect()
     }
 
-    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        _current_level: u32,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
             y: 0,
@@ -398,7 +416,13 @@ impl GridLayout for ColorGrid {
             .collect()
     }
 
-    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        _current_level: u32,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
             y: 0,
@@ -496,7 +520,13 @@ impl GridLayout for FeatureGrid {
             .collect()
     }
 
-    fn process_key(&mut self, key: KeyCode, _current_level: u32) -> Option<GridCoord> {
+    fn process_key(
+        &mut self,
+        key: KeyCode,
+        _current_level: u32,
+        _screen: &ScreenInfo,
+        _density: u32,
+    ) -> Option<GridCoord> {
         self.jump_target_map.get(&key).map(|&index| GridCoord {
             x: index as u32,
             y: 0,
