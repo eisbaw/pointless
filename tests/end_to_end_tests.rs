@@ -1,5 +1,5 @@
-use pointless::{Config, GridType, ModifierKey, PointlessError};
 use pointless::config::MoveStyle;
+use pointless::{Config, GridType, ModifierKey, PointlessError};
 use std::env;
 
 #[cfg(test)]
@@ -122,8 +122,8 @@ mod end_to_end_tests {
             debug: false,
             png_output: None,
             png_resolution: "1920x1080".to_string(),
-                always_show: false,
-                movestyle: MoveStyle::None,
+            always_show: false,
+            movestyle: MoveStyle::None,
         };
 
         // Initialize X11 client
@@ -235,8 +235,8 @@ mod end_to_end_tests {
             debug: false,
             png_output: None,
             png_resolution: "1920x1080".to_string(),
-                always_show: false,
-                movestyle: MoveStyle::None,
+            always_show: false,
+            movestyle: MoveStyle::None,
         };
 
         for _ in 0..10 {

@@ -32,7 +32,6 @@ impl CoordinateResolver {
         ScreenCoord { x, y }
     }
 
-
     /// Convert grid coordinate to screen coordinate for arrow grids
     #[must_use]
     pub const fn grid_to_screen_arrow(
@@ -87,5 +86,4 @@ mod tests {
         assert_eq!(screen_coord.x, 240); // (0 * 480 + 240)
         assert_eq!(screen_coord.y, 135); // (0 * 270 + 135)
     }
-
 }

@@ -58,7 +58,7 @@ impl Renderer {
         unsafe {
             x11_client.set_foreground_color(gc, color as u64);
         }
-        
+
         // Map window immediately like working demo
         x11_client.map_window(overlay_window)?;
         unsafe {

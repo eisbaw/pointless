@@ -323,7 +323,6 @@ impl X11Client {
         }
     }
 
-
     /// Map (show) a window
     ///
     /// # Errors
@@ -337,7 +336,6 @@ impl X11Client {
         }
         Ok(())
     }
-
 
     /// Destroy a window and release its resources
     pub fn destroy_window(&self, window: u64) {

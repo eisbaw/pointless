@@ -25,6 +25,7 @@ use renderer::Renderer;
 use signal_hook::{consts::SIGINT, consts::SIGTERM, iterator::Signals};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use types::GridCell;
 use x11_client::{ScreenInfo, X11Client};
 
 /// Application state holding all initialized components
@@ -36,6 +37,7 @@ struct ApplicationState {
     grid_manager: GridManager,
     cursor_animator: CursorAnimator,
     screen_info: ScreenInfo,
+    current_displayed_cells: Vec<GridCell>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -180,6 +182,7 @@ fn initialize_application_components(
         grid_manager,
         cursor_animator,
         screen_info,
+        current_displayed_cells: Vec::new(),
     })
 }
 
@@ -233,6 +236,9 @@ fn run_event_loop(mut app_state: ApplicationState) -> Result<(), Box<dyn std::er
             .grid_manager
             .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
         debug!("Generated {} grid cells for always-show mode", cells.len());
+
+        // Store the cells for cursor movement
+        app_state.current_displayed_cells = cells.clone();
 
         // Show overlay FIRST (creates window), then draw
         app_state
@@ -308,6 +314,9 @@ fn handle_input_event(
                     cursor_pos.y
                 );
 
+                // Store the cells for cursor movement
+                app_state.current_displayed_cells = cells.clone();
+
                 // Show overlay FIRST (creates window), then draw
                 app_state
                     .renderer
@@ -318,6 +327,9 @@ fn handle_input_event(
                 debug!("Localized grid shown");
             } else {
                 debug!("Modifier key pressed - showing full grid");
+                
+                // Switch back to full grid mode
+                app_state.grid_manager.set_full_grid_mode();
 
                 // Calculate and show grid
                 // Note: Grid calculations are performed on each modifier press rather than cached
@@ -333,6 +345,9 @@ fn handle_input_event(
                     debug!("First cell: {:?}", cells[0]);
                     debug!("Last cell: {:?}", cells[cells.len() - 1]);
                 }
+
+                // Store the cells for cursor movement
+                app_state.current_displayed_cells = cells.clone();
 
                 // Show overlay FIRST (creates window), then draw
                 debug!("Showing overlay");
@@ -352,15 +367,16 @@ fn handle_input_event(
             // Hide grid and reset state
             app_state.renderer.hide_overlay(&app_state.x11_client)?;
             app_state.grid_manager.reset();
+            app_state.current_displayed_cells.clear();
         }
         InputEvent::NavigationKey(keycode) => {
             debug!("Navigation key pressed: {}", keycode);
 
-            // Process navigation and move cursor with animation
-            if let Some(target_pos) = app_state.grid_manager.process_key(
+            // Process navigation and move cursor with animation using displayed cells
+            if let Some(target_pos) = app_state.grid_manager.process_key_with_cells(
                 keycode,
+                &app_state.current_displayed_cells,
                 &app_state.screen_info,
-                app_state.config.grid_density,
             ) {
                 if let Err(e) = app_state
                     .cursor_animator

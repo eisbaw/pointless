@@ -29,6 +29,31 @@ impl QwertyGrid {
         }
     }
 
+    #[must_use]
+    pub fn new_with_localized_region(screen: &ScreenInfo, cursor_x: i32, cursor_y: i32) -> Self {
+        let local_width = 400u32;
+        let local_height = 300u32;
+        
+        let half_width = local_width as i32 / 2;
+        let half_height = local_height as i32 / 2;
+        
+        let local_x = (cursor_x - half_width)
+            .max(0)
+            .min((screen.width as i32).saturating_sub(local_width as i32));
+        let local_y = (cursor_y - half_height)
+            .max(0)
+            .min((screen.height as i32).saturating_sub(local_height as i32));
+            
+        let local_region = Rectangle::new(local_x, local_y, local_width, local_height);
+        
+        Self {
+            key_map: HashMap::new(),
+            selected_region: Some(local_region),
+            refinement_level: 0,
+            max_refinements: 3,
+        }
+    }
+
     fn keycode_to_label(&self, keycode: KeyCode) -> String {
         match keycode {
             KEYCODE_Q => "Q".to_string(),
@@ -296,60 +321,27 @@ impl GridLayout for QwertyGrid {
         screen: &ScreenInfo,
         _density: u32,
     ) -> ScreenCoord {
-        // Calculate the grid based on the full screen (ignoring selected_region for cursor positioning)
-        // We need to temporarily create a fresh grid to get the original coordinates
-        let full_screen_region = Rectangle::new(0, 0, screen.width, screen.height);
-
-        // Define QWERTY layout (same as in calculate_grid)
-        let qwerty_rows = [
-            vec![
-                KEYCODE_Q, KEYCODE_W, KEYCODE_E, KEYCODE_R, KEYCODE_T, KEYCODE_Y, KEYCODE_U,
-                KEYCODE_I, KEYCODE_O, KEYCODE_P,
-            ],
-            vec![
-                KEYCODE_A, KEYCODE_S, KEYCODE_D, KEYCODE_F, KEYCODE_G, KEYCODE_H, KEYCODE_J,
-                KEYCODE_K, KEYCODE_L,
-            ],
-            vec![
-                KEYCODE_Z, KEYCODE_X, KEYCODE_C, KEYCODE_V, KEYCODE_B, KEYCODE_N, KEYCODE_M,
-            ],
-        ];
-
-        let rows = qwerty_rows.len() as u32;
-        let row_height = full_screen_region.height / rows;
-
-        for (row_idx, row) in qwerty_rows.iter().enumerate() {
-            let cols = row.len() as u32;
-            let col_width = full_screen_region.width / cols;
-
-            for (col_idx, _keycode) in row.iter().enumerate() {
-                let cell_coord = GridCoord {
-                    x: col_idx as u32,
-                    y: row_idx as u32,
+        // Generate the grid cells and find the one matching our coordinate
+        let cells = self.calculate_grid(screen, _density);
+        
+        for cell in cells {
+            if cell.coord == coord {
+                let center_x = cell.screen_rect.x + (cell.screen_rect.width / 2) as i32;
+                let center_y = cell.screen_rect.y + (cell.screen_rect.height / 2) as i32;
+                
+                // This method is now primarily used for backwards compatibility
+                // The main cursor movement logic uses process_key_with_cells for better accuracy
+                
+                return ScreenCoord {
+                    x: center_x,
+                    y: center_y,
                 };
-
-                if cell_coord == coord {
-                    let rect_x = full_screen_region.x + (col_idx as u32 * col_width) as i32;
-                    let rect_y = full_screen_region.y + (row_idx as u32 * row_height) as i32;
-
-                    let center_x = rect_x + (col_width / 2) as i32;
-                    let center_y = rect_y + (row_height / 2) as i32;
-
-                    log::debug!("QWERTY box center: grid({}, {}) -> screen({}, {}) [full_screen_box={}x{}+{}+{}]",
-                               coord.x, coord.y, center_x, center_y,
-                               col_width, row_height, rect_x, rect_y);
-
-                    return ScreenCoord {
-                        x: center_x,
-                        y: center_y,
-                    };
-                }
             }
         }
 
         // Fallback - should not happen
         log::warn!(
-            "Could not find box for grid coordinate ({}, {})",
+            "Could not find cell for grid coordinate ({}, {})",
             coord.x,
             coord.y
         );
