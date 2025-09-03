@@ -16,6 +16,7 @@ mod x11_client;
 
 use clap::Parser;
 use config::Config;
+use constants::{KEYCODE_PAGE_UP, KEYCODE_PAGE_DOWN};
 use cursor_animator::CursorAnimator;
 use grid_manager::GridManager;
 use input_handler::{InputEvent, InputHandler};
@@ -372,12 +373,33 @@ fn handle_input_event(
         InputEvent::NavigationKey(keycode) => {
             debug!("Navigation key pressed: {}", keycode);
 
+            // Check if this is a grid structure changing key (PageUp/PageDown)
+            let is_structure_changing_key = keycode == KEYCODE_PAGE_UP || keycode == KEYCODE_PAGE_DOWN;
+
             // Process navigation and move cursor with animation using displayed cells
             if let Some(target_pos) = app_state.grid_manager.process_key_with_cells(
                 keycode,
                 &app_state.current_displayed_cells,
                 &app_state.screen_info,
             ) {
+                // If this was a structure changing key, redraw the grid with new hierarchy
+                if is_structure_changing_key {
+                    debug!("Structure changing key detected - redrawing grid");
+                    
+                    // Recalculate grid cells with new hierarchy
+                    let cells = app_state
+                        .grid_manager
+                        .calculate_grid(&app_state.screen_info, app_state.config.grid_density);
+                    debug!("Recalculated {} grid cells after hierarchy change", cells.len());
+                    
+                    // Update stored cells and redraw
+                    app_state.current_displayed_cells = cells.clone();
+                    app_state
+                        .renderer
+                        .draw_grid(&app_state.x11_client, &cells)?;
+                    debug!("Grid redrawn with new hierarchy");
+                }
+
                 if let Err(e) = app_state
                     .cursor_animator
                     .animate_move(&app_state.x11_client, target_pos)
