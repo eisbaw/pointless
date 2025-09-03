@@ -63,6 +63,124 @@ impl ArrowGrid {
         self.grid_stack.last_mut()
     }
 
+    /// Migrate sub-grid to adjacent parent cell when hitting boundary
+    fn migrate_subgrid_on_boundary(
+        &mut self,
+        direction: KeyCode,
+        _screen: &ScreenInfo,
+    ) -> Option<GridCoord> {
+        // Only migrate if we have at least 2 levels (parent + sub-grid)
+        if self.grid_stack.len() < 2 {
+            log::debug!("Cannot migrate: not in sub-grid, staying at boundary");
+            // Return current position when at root level boundary
+            return self.current_level().map(|level| level.current_pos);
+        }
+
+        // Get parent level (second to last)
+        let parent_idx = self.grid_stack.len() - 2;
+        let mut parent_level = self.grid_stack[parent_idx].clone();
+
+        // Try to move parent position in the given direction
+        let mut can_migrate = false;
+        match direction {
+            KEYCODE_UP => {
+                if parent_level.current_pos.y > 0 {
+                    parent_level.current_pos.y -= 1;
+                    can_migrate = true;
+                }
+            }
+            KEYCODE_DOWN => {
+                if parent_level.current_pos.y < (parent_level.rows - 1) {
+                    parent_level.current_pos.y += 1;
+                    can_migrate = true;
+                }
+            }
+            KEYCODE_LEFT => {
+                if parent_level.current_pos.x > 0 {
+                    parent_level.current_pos.x -= 1;
+                    can_migrate = true;
+                }
+            }
+            KEYCODE_RIGHT => {
+                if parent_level.current_pos.x < (parent_level.cols - 1) {
+                    parent_level.current_pos.x += 1;
+                    can_migrate = true;
+                }
+            }
+            _ => {}
+        }
+
+        if !can_migrate {
+            log::debug!("Cannot migrate: parent at boundary too, staying at current position");
+            // Return current position when parent is at boundary too
+            return self.current_level().map(|level| level.current_pos);
+        }
+
+        // Calculate new sub-grid region based on new parent position
+        let parent_cell_width = parent_level.region.width / parent_level.cols;
+        let parent_cell_height = parent_level.region.height / parent_level.rows;
+
+        let new_sub_region = Rectangle::new(
+            parent_level.region.x + (parent_level.current_pos.x * parent_cell_width) as i32,
+            parent_level.region.y + (parent_level.current_pos.y * parent_cell_height) as i32,
+            parent_cell_width,
+            parent_cell_height,
+        );
+
+        // Update parent level in stack
+        self.grid_stack[parent_idx] = parent_level;
+
+        // Store parent position for logging
+        let parent_pos = self.grid_stack[parent_idx].current_pos;
+
+        // Update sub-grid region and position cursor at appropriate edge
+        if let Some(current_level) = self.current_level_mut() {
+            current_level.region = new_sub_region;
+
+            // Position cursor at opposite edge from where we came
+            match direction {
+                KEYCODE_UP => {
+                    // Came from bottom, go to bottom edge of new sub-grid
+                    current_level.current_pos.y = current_level.rows - 1;
+                }
+                KEYCODE_DOWN => {
+                    // Came from top, go to top edge of new sub-grid
+                    current_level.current_pos.y = 0;
+                }
+                KEYCODE_LEFT => {
+                    // Came from right, go to right edge of new sub-grid
+                    current_level.current_pos.x = current_level.cols - 1;
+                }
+                KEYCODE_RIGHT => {
+                    // Came from left, go to left edge of new sub-grid
+                    current_level.current_pos.x = 0;
+                }
+                _ => {}
+            }
+
+            let cursor_pos = current_level.current_pos;
+
+            log::debug!(
+                "Sub-grid migrated {} to parent cell ({}, {}), cursor at ({}, {})",
+                match direction {
+                    KEYCODE_UP => "UP",
+                    KEYCODE_DOWN => "DOWN", 
+                    KEYCODE_LEFT => "LEFT",
+                    KEYCODE_RIGHT => "RIGHT",
+                    _ => "UNKNOWN",
+                },
+                parent_pos.x,
+                parent_pos.y,
+                cursor_pos.x,
+                cursor_pos.y
+            );
+
+            Some(cursor_pos)
+        } else {
+            None
+        }
+    }
+
     fn calculate_hierarchical_cells(&self, _screen: &ScreenInfo) -> Vec<GridCell> {
         let mut cells = Vec::new();
 
@@ -144,8 +262,11 @@ impl GridLayout for ArrowGrid {
                 if let Some(current) = self.current_level_mut() {
                     if current.current_pos.y > 0 {
                         current.current_pos.y -= 1;
+                        Some(current.current_pos)
+                    } else {
+                        // Hit top boundary - migrate sub-grid up in parent level if possible
+                        self.migrate_subgrid_on_boundary(KEYCODE_UP, screen)
                     }
-                    Some(current.current_pos)
                 } else {
                     None
                 }
@@ -154,8 +275,11 @@ impl GridLayout for ArrowGrid {
                 if let Some(current) = self.current_level_mut() {
                     if current.current_pos.y < (current.rows - 1) {
                         current.current_pos.y += 1;
+                        Some(current.current_pos)
+                    } else {
+                        // Hit bottom boundary - migrate sub-grid down in parent level if possible
+                        self.migrate_subgrid_on_boundary(KEYCODE_DOWN, screen)
                     }
-                    Some(current.current_pos)
                 } else {
                     None
                 }
@@ -164,8 +288,11 @@ impl GridLayout for ArrowGrid {
                 if let Some(current) = self.current_level_mut() {
                     if current.current_pos.x > 0 {
                         current.current_pos.x -= 1;
+                        Some(current.current_pos)
+                    } else {
+                        // Hit left boundary - migrate sub-grid left in parent level if possible
+                        self.migrate_subgrid_on_boundary(KEYCODE_LEFT, screen)
                     }
-                    Some(current.current_pos)
                 } else {
                     None
                 }
@@ -174,8 +301,11 @@ impl GridLayout for ArrowGrid {
                 if let Some(current) = self.current_level_mut() {
                     if current.current_pos.x < (current.cols - 1) {
                         current.current_pos.x += 1;
+                        Some(current.current_pos)
+                    } else {
+                        // Hit right boundary - migrate sub-grid right in parent level if possible
+                        self.migrate_subgrid_on_boundary(KEYCODE_RIGHT, screen)
                     }
-                    Some(current.current_pos)
                 } else {
                     None
                 }

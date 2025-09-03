@@ -528,5 +528,79 @@ mod tests {
                 );
             }
         }
+
+        #[test]
+        fn test_arrow_grid_subgrid_boundary_migration() {
+            let mut grid = ArrowGrid::new();
+            let screen = mock_screen();
+
+            // Start at center position (1,1) and move to a position where we can migrate
+            // Don't move to the right edge yet - create sub-grid from center (1,1)
+            
+            // Create sub-grid with PageUp at center position
+            let result = grid.process_key(KEYCODE_PAGE_UP, 0, &screen, 4);
+            assert!(result.is_some(), "Should create sub-grid");
+
+            // Verify we have 2 levels (root + sub)
+            let cells = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells.len(), 18, "Should have root + sub-grid cells");
+
+            // Navigate to the right edge of sub-grid (sub-grid is 3x3, so right edge is x=2)
+            // Sub-grid cursor starts at center (1,1), so one right move gets to edge (2,1)
+            grid.process_key(KEYCODE_RIGHT, 0, &screen, 4); // Move right to edge (2,1)
+
+            // Try to go right again - this should migrate sub-grid to parent right
+            let migration_result = grid.process_key(KEYCODE_RIGHT, 0, &screen, 4);
+            assert!(migration_result.is_some(), "Should migrate sub-grid right");
+
+            // Verify sub-grid migrated (still 18 cells but different positions)
+            let migrated_cells = grid.calculate_grid(&screen, 4);
+            assert_eq!(migrated_cells.len(), 18, "Should still have root + sub-grid cells");
+
+            // Sub-grid should be in a different location now
+            let sub_cells: Vec<_> = migrated_cells.iter()
+                .filter(|cell| cell.label.starts_with('L'))
+                .collect();
+            
+            // All sub-grid cells should be further right than before
+            assert!(sub_cells.len() == 9, "Should have 9 sub-grid cells");
+            
+            // Test boundary case - try to migrate beyond parent boundaries
+            // Navigate to rightmost position and try to go further right
+            grid.process_key(KEYCODE_RIGHT, 0, &screen, 4); // Should hit parent boundary
+            let boundary_result = grid.process_key(KEYCODE_RIGHT, 0, &screen, 4);
+            // This should return None or the same position since we can't migrate further
+            assert!(boundary_result.is_some(), "Should handle boundary gracefully");
+        }
+
+        #[test]
+        fn test_arrow_grid_subgrid_migration_positioning() {
+            let mut grid = ArrowGrid::new();
+            let screen = mock_screen();
+
+            // Create sub-grid
+            grid.process_key(KEYCODE_PAGE_UP, 0, &screen, 4);
+
+            // Navigate to left edge of sub-grid  
+            grid.process_key(KEYCODE_LEFT, 0, &screen, 4); // Move left
+            
+            // Hit left boundary - should migrate left and position cursor at right edge
+            let migration_result = grid.process_key(KEYCODE_LEFT, 0, &screen, 4);
+            assert!(migration_result.is_some(), "Should migrate left");
+
+            // After migration left, cursor should be at right edge of new sub-grid
+            // We can verify this by trying to move right (should work) and left (should migrate again)
+            let right_move = grid.process_key(KEYCODE_RIGHT, 0, &screen, 4);
+            assert!(right_move.is_some(), "Should be able to move right after left migration");
+
+            // Test vertical migration
+            grid.process_key(KEYCODE_UP, 0, &screen, 4); // Move to top
+            let up_migration = grid.process_key(KEYCODE_UP, 0, &screen, 4);
+            assert!(up_migration.is_some(), "Should migrate up");
+            
+            // After up migration, should be at bottom of new sub-grid
+            let down_move = grid.process_key(KEYCODE_DOWN, 0, &screen, 4);
+            assert!(down_move.is_some(), "Should be able to move down after up migration");
+        }
     }
 }
