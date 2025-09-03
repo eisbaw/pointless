@@ -72,19 +72,21 @@ impl GridManager {
             .current_grid
             .process_key(key, self.current_level, screen, 0)
         {
-            // Find the cell with matching coordinate in the displayed cells
-            for cell in displayed_cells {
+            // Find the cell with matching coordinate from the deepest level
+            // Search in reverse order since deeper levels are added later
+            for cell in displayed_cells.iter().rev() {
                 if cell.coord == coord {
                     let center_x = cell.screen_rect.x + (cell.screen_rect.width / 2) as i32;
                     let center_y = cell.screen_rect.y + (cell.screen_rect.height / 2) as i32;
 
                     log::debug!(
-                        "Found cell for key {}: grid({}, {}) -> screen({}, {})",
+                        "Found cell for key {}: grid({}, {}) -> screen({}, {}) [{}]",
                         key,
                         coord.x,
                         coord.y,
                         center_x,
-                        center_y
+                        center_y,
+                        cell.label
                     );
 
                     return Some(ScreenCoord {

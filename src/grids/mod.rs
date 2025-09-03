@@ -442,5 +442,91 @@ mod tests {
             let cells_root = grid.calculate_grid(&screen, 4);
             assert_eq!(cells_root.len(), 9); // Just root
         }
+
+        #[test]
+        fn test_arrow_grid_cursor_positioning_in_subgrids() {
+            use crate::grid_manager::GridManager;
+            use crate::config::{Config, GridType, ModifierKey, MoveStyle};
+            
+            let config = Config {
+                grid_type: GridType::Arrow,
+                modifier_key: ModifierKey::Alt,
+                grid_density: 3,
+                color: "FFFF00".to_string(),
+                opacity: 0.8,
+                debug: false,
+                png_output: None,
+                png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
+                always_show: false,
+                movestyle: MoveStyle::None,
+            };
+
+            let mut grid_manager = GridManager::new(&config).unwrap();
+            let screen = mock_screen();
+
+            // Get initial grid (root level)
+            let root_cells = grid_manager.calculate_grid(&screen, 3);
+            assert_eq!(root_cells.len(), 9);
+
+            // Navigate within root grid to position (2,1) - right edge, middle row
+            grid_manager.process_key_with_cells(KEYCODE_RIGHT, &root_cells, &screen);
+            
+            // Create sub-grid with PageUp at current position
+            grid_manager.process_key_with_cells(KEYCODE_PAGE_UP, &root_cells, &screen);
+            
+            // Get new cells with hierarchy
+            let sub_cells = grid_manager.calculate_grid(&screen, 3);
+            assert_eq!(sub_cells.len(), 18); // Root + Sub-grid
+
+            // Find root cells vs sub-grid cells by looking at their screen positions
+            let mut root_level_cells = Vec::new();
+            let mut sub_level_cells = Vec::new();
+            
+            for cell in &sub_cells {
+                if cell.label.starts_with('L') {
+                    sub_level_cells.push(cell);
+                } else {
+                    root_level_cells.push(cell);
+                }
+            }
+            
+            assert_eq!(root_level_cells.len(), 9, "Should have 9 root level cells");
+            assert_eq!(sub_level_cells.len(), 9, "Should have 9 sub-level cells");
+
+            // Sub-grid cells should be smaller and positioned within one of the root cells
+            let root_cell_area = root_level_cells[0].screen_rect.width * root_level_cells[0].screen_rect.height;
+            let sub_cell_area = sub_level_cells[0].screen_rect.width * sub_level_cells[0].screen_rect.height;
+            
+            assert!(sub_cell_area < root_cell_area, "Sub-grid cells should be smaller than root cells");
+
+            // Navigate within sub-grid - cursor should move to sub-grid cell positions
+            let pos_in_sub = grid_manager.process_key_with_cells(KEYCODE_LEFT, &sub_cells, &screen);
+            assert!(pos_in_sub.is_some(), "Should be able to navigate within sub-grid");
+
+            if let Some(sub_pos) = pos_in_sub {
+                // Verify the cursor is positioned within the sub-grid area
+                let sub_grid_bounds = sub_level_cells.iter().fold(
+                    (i32::MAX, i32::MAX, i32::MIN, i32::MIN),
+                    |(min_x, min_y, max_x, max_y), cell| {
+                        (
+                            min_x.min(cell.screen_rect.x),
+                            min_y.min(cell.screen_rect.y),
+                            max_x.max(cell.screen_rect.x + cell.screen_rect.width as i32),
+                            max_y.max(cell.screen_rect.y + cell.screen_rect.height as i32),
+                        )
+                    }
+                );
+                
+                assert!(
+                    sub_pos.x >= sub_grid_bounds.0 && sub_pos.x <= sub_grid_bounds.2,
+                    "Cursor X should be within sub-grid bounds"
+                );
+                assert!(
+                    sub_pos.y >= sub_grid_bounds.1 && sub_pos.y <= sub_grid_bounds.3,
+                    "Cursor Y should be within sub-grid bounds"
+                );
+            }
+        }
     }
 }
