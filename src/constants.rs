@@ -52,6 +52,10 @@ pub const KEYCODE_DOWN: u32 = 116;
 pub const KEYCODE_LEFT: u32 = 113;
 pub const KEYCODE_RIGHT: u32 = 114;
 
+// Page navigation keys
+pub const KEYCODE_PAGE_UP: u32 = 112;
+pub const KEYCODE_PAGE_DOWN: u32 = 117;
+
 // Additional special characters
 pub const KEYCODE_DOLLAR: u32 = 21; // Shift+4
 

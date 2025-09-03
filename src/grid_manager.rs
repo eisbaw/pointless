@@ -11,7 +11,6 @@ pub struct GridManager {
 }
 
 impl GridManager {
-    #[must_use]
     pub fn new(config: &Config) -> Result<Self, crate::error::PointlessError> {
         let current_grid: Box<dyn GridLayout> = match config.grid_type {
             GridType::Homogeneous => Box::new(HomogeneousGrid::new()),
@@ -106,7 +105,6 @@ impl GridManager {
 
         None
     }
-
 
     pub fn reset(&mut self) {
         self.current_grid.reset();

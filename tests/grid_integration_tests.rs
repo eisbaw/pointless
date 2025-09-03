@@ -1,6 +1,6 @@
-use pointless::grid_manager::GridManager;
-use pointless::{Config, GridType, ScreenInfo, ModifierKey};
 use pointless::config::MoveStyle;
+use pointless::grid_manager::GridManager;
+use pointless::{Config, GridType, ModifierKey, ScreenInfo};
 
 #[cfg(test)]
 mod grid_integration_tests {

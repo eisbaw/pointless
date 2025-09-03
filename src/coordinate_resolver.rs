@@ -32,7 +32,6 @@ impl CoordinateResolver {
         ScreenCoord { x, y }
     }
 
-
     /// Convert grid coordinate directly to screen coordinate (for Vim grids that work in screen space)
     #[must_use]
     pub const fn grid_to_screen_direct(

@@ -361,5 +361,86 @@ mod tests {
             let cells = grid.calculate_grid(&screen, 4);
             assert_eq!(cells.len(), 1); // Should show only cursor position
         }
+
+        #[test]
+        fn test_arrow_grid_recursive_navigation() {
+            let mut grid = ArrowGrid::new();
+            let screen = mock_screen();
+
+            // Initial grid should have 9 cells (3x3)
+            let cells = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells.len(), 9);
+
+            // Move to a specific position
+            grid.process_key(KEYCODE_RIGHT, 0, &screen, 4); // Move right from center
+            grid.process_key(KEYCODE_UP, 0, &screen, 4); // Move up
+
+            // Press PageUp to recurse into current cell
+            let result = grid.process_key(KEYCODE_PAGE_UP, 0, &screen, 4);
+            assert!(result.is_some(), "PageUp should return a coordinate");
+
+            // Now we should have cells from both levels (parent + child)
+            let cells = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells.len(), 18); // 9 parent cells + 9 child cells
+
+            // Check labels to ensure we have both levels
+            let labels: Vec<&str> = cells.iter().map(|cell| cell.label.as_str()).collect();
+            assert!(
+                labels.iter().any(|&label| label.starts_with("L1:")),
+                "Should have level 1 labels"
+            );
+            assert!(
+                labels.iter().any(|&label| !label.starts_with("L")),
+                "Should have root level labels"
+            );
+
+            // Navigate in the sub-grid
+            grid.process_key(KEYCODE_LEFT, 0, &screen, 4);
+            grid.process_key(KEYCODE_DOWN, 0, &screen, 4);
+
+            // PageDown to go back to parent level
+            let result = grid.process_key(KEYCODE_PAGE_DOWN, 0, &screen, 4);
+            assert!(result.is_some(), "PageDown should return a coordinate");
+
+            // Should be back to just the root level
+            let cells = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells.len(), 9); // Just root level cells
+
+            // Try PageDown again - should stay at root level
+            let result = grid.process_key(KEYCODE_PAGE_DOWN, 0, &screen, 4);
+            assert!(
+                result.is_some(),
+                "PageDown at root should still return coordinate"
+            );
+
+            let cells = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells.len(), 9); // Still just root level cells
+        }
+
+        #[test]
+        fn test_arrow_grid_multi_level_recursion() {
+            let mut grid = ArrowGrid::new();
+            let screen = mock_screen();
+
+            // Go to level 1
+            grid.process_key(KEYCODE_PAGE_UP, 0, &screen, 4);
+            let cells_level1 = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells_level1.len(), 18); // Root + Level 1
+
+            // Go to level 2
+            grid.process_key(KEYCODE_PAGE_UP, 0, &screen, 4);
+            let cells_level2 = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells_level2.len(), 27); // Root + Level 1 + Level 2
+
+            // Go back to level 1
+            grid.process_key(KEYCODE_PAGE_DOWN, 0, &screen, 4);
+            let cells_back_to_level1 = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells_back_to_level1.len(), 18); // Root + Level 1
+
+            // Go back to root
+            grid.process_key(KEYCODE_PAGE_DOWN, 0, &screen, 4);
+            let cells_root = grid.calculate_grid(&screen, 4);
+            assert_eq!(cells_root.len(), 9); // Just root
+        }
     }
 }
