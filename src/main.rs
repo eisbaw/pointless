@@ -78,7 +78,7 @@ fn render_to_png(config: Config, png_path: &str) -> Result<(), Box<dyn std::erro
     );
 
     // Initialize grid manager and generate grid
-    let grid_manager = GridManager::new(config.grid_type.clone());
+    let grid_manager = GridManager::new(&config)?;
     let cells = grid_manager.calculate_grid(&screen_info, config.grid_density);
 
     info!("Generated {} grid cells", cells.len());
@@ -155,7 +155,7 @@ fn initialize_application_components(
     let mut renderer = Renderer::new();
     renderer.create_overlay(&x11_client, &config)?;
 
-    let grid_manager = GridManager::new(config.grid_type.clone());
+    let grid_manager = GridManager::new(&config)?;
 
     debug!(
         "Input handler initialized for modifier key: {:?}",
@@ -327,7 +327,7 @@ fn handle_input_event(
                 debug!("Localized grid shown");
             } else {
                 debug!("Modifier key pressed - showing full grid");
-                
+
                 // Switch back to full grid mode
                 app_state.grid_manager.set_full_grid_mode();
 

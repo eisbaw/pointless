@@ -33,19 +33,19 @@ impl QwertyGrid {
     pub fn new_with_localized_region(screen: &ScreenInfo, cursor_x: i32, cursor_y: i32) -> Self {
         let local_width = 400u32;
         let local_height = 300u32;
-        
+
         let half_width = local_width as i32 / 2;
         let half_height = local_height as i32 / 2;
-        
+
         let local_x = (cursor_x - half_width)
             .max(0)
             .min((screen.width as i32).saturating_sub(local_width as i32));
         let local_y = (cursor_y - half_height)
             .max(0)
             .min((screen.height as i32).saturating_sub(local_height as i32));
-            
+
         let local_region = Rectangle::new(local_x, local_y, local_width, local_height);
-        
+
         Self {
             key_map: HashMap::new(),
             selected_region: Some(local_region),
@@ -323,15 +323,15 @@ impl GridLayout for QwertyGrid {
     ) -> ScreenCoord {
         // Generate the grid cells and find the one matching our coordinate
         let cells = self.calculate_grid(screen, _density);
-        
+
         for cell in cells {
             if cell.coord == coord {
                 let center_x = cell.screen_rect.x + (cell.screen_rect.width / 2) as i32;
                 let center_y = cell.screen_rect.y + (cell.screen_rect.height / 2) as i32;
-                
+
                 // This method is now primarily used for backwards compatibility
                 // The main cursor movement logic uses process_key_with_cells for better accuracy
-                
+
                 return ScreenCoord {
                     x: center_x,
                     y: center_y,

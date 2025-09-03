@@ -1,4 +1,4 @@
-use crate::config::GridType;
+use crate::config::{Config, GridType};
 use crate::grids::{ArrowGrid, GridLayout, HomogeneousGrid, QwertyGrid, VimGrid};
 use crate::types::{GridCell, KeyCode, ScreenCoord};
 use crate::x11_client::ScreenInfo;
@@ -12,20 +12,23 @@ pub struct GridManager {
 
 impl GridManager {
     #[must_use]
-    pub fn new(grid_type: GridType) -> Self {
-        let current_grid: Box<dyn GridLayout> = match grid_type {
+    pub fn new(config: &Config) -> Result<Self, crate::error::PointlessError> {
+        let current_grid: Box<dyn GridLayout> = match config.grid_type {
             GridType::Homogeneous => Box::new(HomogeneousGrid::new()),
             GridType::Qwerty => Box::new(QwertyGrid::new()),
-            GridType::Arrow => Box::new(ArrowGrid::new()),
+            GridType::Arrow => {
+                let (cols, rows) = config.parse_arrow_dimensions()?;
+                Box::new(ArrowGrid::new_with_dimensions(cols, rows))
+            }
             GridType::Vim => Box::new(VimGrid::new()),
         };
 
-        Self {
+        Ok(Self {
             current_grid,
             current_level: 0,
             is_localized_mode: false,
             localized_cursor_pos: None,
-        }
+        })
     }
 
     #[must_use]
@@ -75,74 +78,35 @@ impl GridManager {
                 if cell.coord == coord {
                     let center_x = cell.screen_rect.x + (cell.screen_rect.width / 2) as i32;
                     let center_y = cell.screen_rect.y + (cell.screen_rect.height / 2) as i32;
-                    
-                    log::debug!("Found cell for key {}: grid({}, {}) -> screen({}, {})",
-                               key, coord.x, coord.y, center_x, center_y);
-                    
-                    return Some(ScreenCoord { x: center_x, y: center_y });
+
+                    log::debug!(
+                        "Found cell for key {}: grid({}, {}) -> screen({}, {})",
+                        key,
+                        coord.x,
+                        coord.y,
+                        center_x,
+                        center_y
+                    );
+
+                    return Some(ScreenCoord {
+                        x: center_x,
+                        y: center_y,
+                    });
                 }
             }
-            
-            log::warn!("Could not find displayed cell for grid coordinate ({}, {})", coord.x, coord.y);
-        } else {
-            log::debug!("No grid coordinate returned for keycode {}", key);
-        }
-        
-        None
-    }
 
-    pub fn process_key(
-        &mut self,
-        key: KeyCode,
-        screen: &ScreenInfo,
-        density: u32,
-    ) -> Option<ScreenCoord> {
-        // If we're in localized mode, we need to process keys using the localized grid
-        if self.is_localized_mode {
-            if let (Some((cursor_x, cursor_y)), Some(_qwerty_grid)) = 
-                (self.localized_cursor_pos, self.current_grid.as_any().downcast_ref::<QwertyGrid>()) {
-                // Create a temporary localized grid for key processing
-                let mut localized_grid = QwertyGrid::new_with_localized_region(screen, cursor_x, cursor_y);
-                if let Some(coord) = localized_grid.process_key(key, self.current_level, screen, density) {
-                    let screen_coord = localized_grid.grid_to_screen_coord(coord, screen, density);
-                    log::debug!("Localized grid coordinate: ({}, {}) -> screen ({}, {})", 
-                               coord.x, coord.y, screen_coord.x, screen_coord.y);
-                    return Some(screen_coord);
-                }
-            }
-            return None;
-        }
-
-        // Regular full-screen grid processing
-        if let Some(coord) = self
-            .current_grid
-            .process_key(key, self.current_level, screen, density)
-        {
-            log::debug!(
-                "Grid returned coordinate: ({}, {}) for keycode {}",
-                coord.x,
-                coord.y,
-                key
-            );
-
-            // Use efficient coordinate transformation without full grid recalculation
-            let screen_coord = self
-                .current_grid
-                .grid_to_screen_coord(coord, screen, density);
-
-            log::debug!(
-                "Final screen coordinate: ({}, {}) for grid coordinate ({}, {})",
-                screen_coord.x,
-                screen_coord.y,
+            log::warn!(
+                "Could not find displayed cell for grid coordinate ({}, {})",
                 coord.x,
                 coord.y
             );
-
-            return Some(screen_coord);
+        } else {
+            log::debug!("No grid coordinate returned for keycode {}", key);
         }
-        log::debug!("No grid coordinate returned for keycode {}", key);
+
         None
     }
+
 
     pub fn reset(&mut self) {
         self.current_grid.reset();

@@ -1,5 +1,6 @@
 use pointless::grid_manager::GridManager;
-use pointless::{GridType, ScreenInfo};
+use pointless::{Config, GridType, ScreenInfo, ModifierKey};
+use pointless::config::MoveStyle;
 
 #[cfg(test)]
 mod grid_integration_tests {
@@ -13,9 +14,26 @@ mod grid_integration_tests {
         }
     }
 
+    fn create_test_config(grid_type: GridType) -> Config {
+        Config {
+            grid_type,
+            modifier_key: ModifierKey::Alt,
+            grid_density: 3,
+            color: "FFFF00".to_string(),
+            opacity: 0.8,
+            debug: false,
+            png_output: None,
+            png_resolution: "1920x1080".to_string(),
+            arrow: "3x3".to_string(),
+            always_show: false,
+            movestyle: MoveStyle::None,
+        }
+    }
+
     #[test]
     fn test_grid_manager_initialization() {
-        let _grid_manager = GridManager::new(GridType::Homogeneous);
+        let config = create_test_config(GridType::Homogeneous);
+        let _grid_manager = GridManager::new(&config).unwrap();
         // GridManager initialization doesn't fail in current implementation
     }
 
@@ -29,7 +47,8 @@ mod grid_integration_tests {
         ];
 
         for grid_type in grid_types {
-            let _grid_manager = GridManager::new(grid_type.clone());
+            let config = create_test_config(grid_type.clone());
+            let _grid_manager = GridManager::new(&config).unwrap();
             // GridManager initialized successfully for this grid type
         }
     }
@@ -37,7 +56,8 @@ mod grid_integration_tests {
     #[test]
     fn test_grid_cell_generation() {
         let screen_info = create_test_screen_info();
-        let grid_manager = GridManager::new(GridType::Homogeneous);
+        let config = create_test_config(GridType::Homogeneous);
+        let grid_manager = GridManager::new(&config).unwrap();
 
         let cells = grid_manager.calculate_grid(&screen_info, 3);
         assert!(!cells.is_empty(), "Grid should have cells");
@@ -74,7 +94,8 @@ mod grid_integration_tests {
                 root_window: 1,
             };
 
-            let grid_manager = GridManager::new(GridType::Homogeneous);
+            let config = create_test_config(GridType::Homogeneous);
+            let grid_manager = GridManager::new(&config).unwrap();
             let cells = grid_manager.calculate_grid(&screen_info, 2);
             assert!(
                 !cells.is_empty(),
@@ -107,7 +128,8 @@ mod grid_integration_tests {
         let densities = vec![1, 2, 3, 4, 5];
 
         for density in densities {
-            let grid_manager = GridManager::new(GridType::Homogeneous);
+            let config = create_test_config(GridType::Homogeneous);
+            let grid_manager = GridManager::new(&config).unwrap();
             let cells = grid_manager.calculate_grid(&screen_info, density);
             assert!(
                 !cells.is_empty(),
@@ -147,7 +169,8 @@ mod grid_integration_tests {
         ];
 
         for screen_info in degenerate_screens {
-            let grid_manager = GridManager::new(GridType::Homogeneous);
+            let config = create_test_config(GridType::Homogeneous);
+            let grid_manager = GridManager::new(&config).unwrap();
             let _cells = grid_manager.calculate_grid(&screen_info, 3);
             // Should handle degenerate cases gracefully (empty cells are acceptable)
         }
@@ -156,11 +179,13 @@ mod grid_integration_tests {
     #[test]
     fn test_grid_coordinate_mapping() {
         let screen_info = create_test_screen_info();
-        let mut grid_manager = GridManager::new(GridType::Homogeneous);
+        let config = create_test_config(GridType::Homogeneous);
+        let mut grid_manager = GridManager::new(&config).unwrap();
 
         // Test that processing keys works without crashing
         // KeyCode is just u32, so we use a valid X11 keycode (0x26 is 'a' key)
-        let result = grid_manager.process_key(0x26, &screen_info, 3);
+        let cells = grid_manager.calculate_grid(&screen_info, 3);
+        let result = grid_manager.process_key_with_cells(0x26, &cells, &screen_info);
 
         match result {
             Some(coord) => {
@@ -182,12 +207,14 @@ mod grid_integration_tests {
     #[test]
     fn test_grid_reset_functionality() {
         let screen_info = create_test_screen_info();
-        let mut grid_manager = GridManager::new(GridType::Arrow);
+        let config = create_test_config(GridType::Arrow);
+        let mut grid_manager = GridManager::new(&config).unwrap();
 
         // Process some keys to change state
         // Use valid X11 keycodes (Right=114, Down=116 in typical X11)
-        let _ = grid_manager.process_key(114, &screen_info, 3);
-        let _ = grid_manager.process_key(116, &screen_info, 3);
+        let cells = grid_manager.calculate_grid(&screen_info, 3);
+        let _ = grid_manager.process_key_with_cells(114, &cells, &screen_info);
+        let _ = grid_manager.process_key_with_cells(116, &cells, &screen_info);
 
         // Reset should work without error
         grid_manager.reset();

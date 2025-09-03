@@ -69,6 +69,10 @@ pub struct Config {
     /// PNG resolution in WIDTHxHEIGHT format
     #[arg(long, default_value = "1920x1080")]
     pub png_resolution: String,
+
+    /// Arrow grid dimensions in COLSxROWS format (e.g., "3x3", "5x4")
+    #[arg(long, default_value = "3x3")]
+    pub arrow: String,
 }
 
 impl Config {
@@ -128,6 +132,51 @@ impl Config {
         Ok((width, height))
     }
 
+    /// Parse arrow grid dimensions string as (cols, rows)
+    ///
+    /// # Errors
+    /// Returns `PointlessError::InvalidCoordinate` if arrow format is invalid
+    pub fn parse_arrow_dimensions(&self) -> crate::error::Result<(u32, u32)> {
+        let parts: Vec<&str> = self.arrow.split('x').collect();
+        if parts.len() != 2 {
+            return Err(crate::error::PointlessError::InvalidCoordinate(format!(
+                "Invalid arrow dimensions format '{}'. Expected COLSxROWS (e.g., 3x3, 5x4)",
+                self.arrow
+            )));
+        }
+
+        let cols: u32 = parts[0].parse().map_err(|_| {
+            crate::error::PointlessError::InvalidCoordinate(format!(
+                "Invalid columns '{}' in arrow dimensions '{}'",
+                parts[0], self.arrow
+            ))
+        })?;
+
+        let rows: u32 = parts[1].parse().map_err(|_| {
+            crate::error::PointlessError::InvalidCoordinate(format!(
+                "Invalid rows '{}' in arrow dimensions '{}'",
+                parts[1], self.arrow
+            ))
+        })?;
+
+        // Validate basic bounds (prevent zero dimensions and extremely large values)
+        if cols == 0 || rows == 0 {
+            return Err(crate::error::PointlessError::InvalidCoordinate(format!(
+                "Arrow dimensions {}x{} invalid. Columns and rows must be at least 1",
+                cols, rows
+            )));
+        }
+
+        if cols > 1000 || rows > 1000 {
+            return Err(crate::error::PointlessError::InvalidCoordinate(format!(
+                "Arrow dimensions {}x{} too large. Maximum supported is 1000x1000",
+                cols, rows
+            )));
+        }
+
+        Ok((cols, rows))
+    }
+
     /// Validate all configuration parameters
     ///
     /// # Errors
@@ -149,6 +198,9 @@ impl Config {
                 opacity: self.opacity,
             });
         }
+
+        // Validate arrow dimensions
+        self.parse_arrow_dimensions()?;
 
         Ok(())
     }

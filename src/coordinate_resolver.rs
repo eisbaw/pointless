@@ -32,25 +32,6 @@ impl CoordinateResolver {
         ScreenCoord { x, y }
     }
 
-    /// Convert grid coordinate to screen coordinate for arrow grids
-    #[must_use]
-    pub const fn grid_to_screen_arrow(
-        coord: GridCoord,
-        screen: &ScreenInfo,
-        _density: u32,
-    ) -> ScreenCoord {
-        // Arrow grid is always 3x3
-        let cols = 3;
-        let rows = 3;
-
-        let cell_width = screen.width / cols;
-        let cell_height = screen.height / rows;
-
-        let x = (coord.x * cell_width + cell_width / 2) as i32;
-        let y = (coord.y * cell_height + cell_height / 2) as i32;
-
-        ScreenCoord { x, y }
-    }
 
     /// Convert grid coordinate directly to screen coordinate (for Vim grids that work in screen space)
     #[must_use]

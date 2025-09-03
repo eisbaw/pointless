@@ -27,6 +27,7 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -39,6 +40,7 @@ mod end_to_end_tests {
                 debug: true,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -63,6 +65,7 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -75,6 +78,7 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -87,6 +91,7 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -122,6 +127,7 @@ mod end_to_end_tests {
             debug: false,
             png_output: None,
             png_resolution: "1920x1080".to_string(),
+            arrow: "3x3".to_string(),
             always_show: false,
             movestyle: MoveStyle::None,
         };
@@ -133,7 +139,7 @@ mod end_to_end_tests {
                 let screen_info = x11_client.screen_info();
 
                 // Initialize grid manager
-                let grid_manager = GridManager::new(config.grid_type.clone());
+                let grid_manager = GridManager::new(&config).unwrap();
 
                 // Initialize input handler
                 let input_result = InputHandler::new(config.modifier_key.clone(), &x11_client);
@@ -235,6 +241,7 @@ mod end_to_end_tests {
             debug: false,
             png_output: None,
             png_resolution: "1920x1080".to_string(),
+            arrow: "3x3".to_string(),
             always_show: false,
             movestyle: MoveStyle::None,
         };
@@ -243,9 +250,9 @@ mod end_to_end_tests {
             match X11Client::new() {
                 Ok(x11_client) => {
                     let screen_info = x11_client.screen_info();
-                    let _ = GridManager::new(config.grid_type.clone());
+                    let _ = GridManager::new(&config).unwrap();
                     // Test grid calculation
-                    let grid_manager = GridManager::new(config.grid_type.clone());
+                    let grid_manager = GridManager::new(&config).unwrap();
                     let _ = grid_manager.calculate_grid(screen_info, config.grid_density);
                     // Components should be dropped cleanly at end of scope
                 }
@@ -320,6 +327,7 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -333,6 +341,7 @@ mod end_to_end_tests {
                 debug: true,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             },
@@ -372,6 +381,7 @@ mod end_to_end_tests {
                 debug: false,
                 png_output: None,
                 png_resolution: "1920x1080".to_string(),
+                arrow: "3x3".to_string(),
                 always_show: false,
                 movestyle: MoveStyle::None,
             };
@@ -385,7 +395,7 @@ mod end_to_end_tests {
 
             // Should be able to create grid manager
             use pointless::grid_manager::GridManager;
-            let grid_manager = GridManager::new(grid_type.clone());
+            let grid_manager = GridManager::new(&config).unwrap();
             // GridManager created successfully
 
             // Should be able to generate test cells
