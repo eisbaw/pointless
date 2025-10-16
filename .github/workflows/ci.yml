@@ -101,7 +101,7 @@ jobs:
     
     - name: Upload test artifacts
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-logs-${{ matrix.rust }}
         path: |
@@ -247,7 +247,7 @@ jobs:
           pointless pointless.1 install.sh quick-install.sh README.md
     
     - name: Upload release artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-artifacts
         path: release-artifacts/
